@@ -1,17 +1,18 @@
 #include "main.h"
 
-COLOR **buffer;           // Framebuffer
+// Framebuffer
+COLOR **buffer;
 
 /*
  * current_color:
- * Color Activo que usa plot_something al pintar. lo dejamos global para que
+ * - Color Activo que usa plot_something al pintar. lo dejamos global para que
  * la rutina plot(x, y) reciba solo 2 argumentos como pide el enunciado
  */
 COLOR current_color;
 
 int main(int argc, char *argv[])
 {
-  
+
   //                  //
   //      Ventana     //
   //                  //
@@ -22,17 +23,13 @@ int main(int argc, char *argv[])
   // --- Reserva de Memoria ---
   buffer = (COLOR **)malloc(HRES * sizeof(COLOR *));
   if (buffer == NULL)
-  {
-    printf("Uy, no me alcanzo la memoria para una ventana de %dx%d :c  probemos una resolucion mas pequeña!\n", HRES, VRES);
     return 1;
-  }
 
   for (i = 0; i < HRES; i++)
   {
     buffer[i] = (COLOR *)malloc(VRES * sizeof(COLOR));
     if (buffer[i] == NULL)
     {
-      printf("Uy, no me alcanzo la memoria para una ventana de %dx%d :c  probemos una resolucion mas pequeña!\n", HRES, VRES);
       for (j = 0; j < i; j++)
         free(buffer[j]);
       free(buffer);
@@ -60,14 +57,11 @@ int main(int argc, char *argv[])
   //                  //
   //  Fin del Archivo //
   //                  //
-
-  // --- Cosas de Inicialización de las Bibliotecas / Headers ---
   glutMainLoop();
 
   //                  //
-  //Liberando  Memoria//
+  // Liberando  Memoria//
   //                  //
-
   for (i = 0; i < HRES; i++)
     free(buffer[i]);
   free(buffer);
@@ -102,13 +96,17 @@ void draw_scene()
       glEnd();
       last_x = i;
     }
-    glFlush();
+
+  // Línea blanca con extremos dentro del framebuffer.
+  color_province(&current_color, CARTAGO);
+  bresenham(HRES / 4, VRES / 4, 3 * HRES / 4, 3 * VRES / 4);
+
+  glFlush();
 }
 
 //-------------------------------------------------------------------------------
 //---------------Funciones PRO1--------------------------------------------------
 //-------------------------------------------------------------------------------
-
 
 //-------------------------------------------------------------------------------
 //---------------Funciones PRO0--------------------------------------------------
@@ -142,58 +140,58 @@ void plot(int x, int y)
  */
 void color_province(COLOR *c, PROVINCES province)
 {
-    switch (province)
-    {
-    case SANJOSE:
-        // Morado
-        c->r = 0.5;
-        c->g = 0.0;
-        c->b = 0.5;
-        break;
+  switch (province)
+  {
+  case SANJOSE:
+    // Morado
+    c->r = 0.5;
+    c->g = 0.0;
+    c->b = 0.5;
+    break;
 
-    case ALAJUELA:
-        // Rojo
-        c->r = 1.0;
-        c->g = 0.0;
-        c->b = 0.0;
-        break;
+  case ALAJUELA:
+    // Rojo
+    c->r = 1.0;
+    c->g = 0.0;
+    c->b = 0.0;
+    break;
 
-    case CARTAGO:
-        // Azul
-        c->r = 0.0;
-        c->g = 0.0;
-        c->b = 1.0;
-        break;
+  case CARTAGO:
+    // Azul
+    c->r = 0.0;
+    c->g = 0.0;
+    c->b = 1.0;
+    break;
 
-    case HEREDIA:
-        // Amarillo
-        c->r = 1.0;
-        c->g = 1.0;
-        c->b = 0.0;
-        break;
+  case HEREDIA:
+    // Amarillo
+    c->r = 1.0;
+    c->g = 1.0;
+    c->b = 0.0;
+    break;
 
-    case GUANACASTE:
-        // Rosado
-        c->r = 1.0;
-        c->g = 0.0;
-        c->b = 0.5;
-        break;
+  case GUANACASTE:
+    // Rosado
+    c->r = 1.0;
+    c->g = 0.0;
+    c->b = 0.5;
+    break;
 
-    case PUNTARENAS:
-        // Naranja
-        c->r = 1.0;
-        c->g = 0.5;
-        c->b = 0.0;
-        break;
+  case PUNTARENAS:
+    // Naranja
+    c->r = 1.0;
+    c->g = 0.5;
+    c->b = 0.0;
+    break;
 
-    case LIMON:
-        // Verde
-        c->r = 0.0;
-        c->g = 1.0;
-        c->b = 0.0;
-        break;
+  case LIMON:
+    // Verde
+    c->r = 0.0;
+    c->g = 1.0;
+    c->b = 0.0;
+    break;
 
-    default:
-        break;
-    }
+  default:
+    break;
+  }
 }

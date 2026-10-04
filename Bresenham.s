@@ -1,10 +1,10 @@
 BITS 64
 default rel
 section .text
-global line_bresenham
+global bresenham
 extern plot
 
-line_bresenham:
+bresenham:
     push rbp
     mov rbp, rsp
     sub rsp, 64                  ; Pila alineada a 16 bytes antes de call.

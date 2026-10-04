@@ -1,19 +1,28 @@
+CC=cc
+NASM=nasm
+
 OBJECTS=main.o Bresenham.o
 OUTPUT=main
 
 CFLAGS=-O0 -I/usr/local/Mesa-3.4/include
-#LDLIBS=-lX11 -lglut -lMesaGLU -lMesaGL -lm -lXext -lXmu
 LDLIBS=-lX11 -lglut -lGLU -lGL -lm -lXext -lXmu
 LDFLAGS=-L/usr/local/Mesa-3.4/lib -L/usr/X11R6/lib
 
-$(OUTPUT):	$(OBJECTS)
-	cc	$(CFLAGS) $(LDFLAGS) -o $(OUTPUT) $(OBJECTS) $(LDLIBS)
+.PHONY: all run clean
 
-$(OBJECTS):	main.h
+all: $(OUTPUT)
+
+$(OUTPUT): $(OBJECTS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $(OUTPUT) $(OBJECTS) $(LDLIBS)
+
+main.o: main.c main.h
+	$(CC) $(CFLAGS) -c main.c -o main.o
+
+Bresenham.o: Bresenham.s
+	$(NASM) -f elf64 Bresenham.s -o Bresenham.o
 
 run: $(OUTPUT)
-	./$(OUTPUT) 256 100 500
+	./$(OUTPUT)
 
 clean:
-	rm	-f	*.o
-	rm	-f	main
+	rm -f $(OBJECTS) $(OUTPUT)

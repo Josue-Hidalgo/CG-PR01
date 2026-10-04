@@ -40,6 +40,9 @@ typedef enum {
   LIMON
 } PROVINCES;
 
+
+extern void bresenham(int x0, int y0, int x1, int y1);
+
 void plot(int x, int y);
 void color_province(COLOR *c, PROVINCES province);
 void draw_scene();
