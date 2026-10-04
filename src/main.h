@@ -1,6 +1,11 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+/*
+ * main.h - Tipos, constantes y enumeraciones COMPARTIDAS por todos los modulos.
+ * Aqui NO se declaran funciones de otros modulos (cada .h declara las suyas).
+ */
+
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -20,53 +25,48 @@ typedef struct
   double b;
 } COLOR;
 
-typedef struct {
+typedef struct
+{
   int x;
   int y;
 } POINT;
 
-typedef struct {
+typedef struct
+{
   POINT A;
   POINT B;
 } LINE;
 
-typedef enum {
+typedef enum
+{
   SANJOSE,
   ALAJUELA,
   CARTAGO,
   HEREDIA,
   GUANACASTE,
   PUNTARENAS,
-  LIMON
+  LIMON,
+  PROVINCE_COUNT
 } PROVINCES;
 
-typedef enum {
+/* Modos de despliegue (confirmar contra el enunciado PR01-CG.pdf) */
+typedef enum
+{
+  MODE_SIMPLE,  /* solo bordes   */
+  MODE_FILL,    /* color solido  */
+  MODE_TEXTURE, /* textura .avs  */
+  MODE_COUNT
+} DISPLAY_MODES;
+
+/* Opciones del menu contextual */
+typedef enum
+{
   DISPLAY_MODE,
-  ZOOM,
-  PAN,
+  ZOOM_IN,
+  ZOOM_OUT,
   ROTATION,
   RESTART,
   EXIT
 } MENU;
 
-
-extern void bresenham(int x0, int y0, int x1, int y1);
-
-
-void Display(void);
-void Zoom(void);//Operacion zoom usar matriz dada por torres, entrada seria el delta de crecimiento o decrecimiento, arbitrario o configurable
-void Pan(void);//Operacion Pan (mover) dada por torres, misma idea que con zoom, valor (x,y) para mover la ventana
-void Rotate(void);//Operacion de rotar el poligono (Usar Rad)
-void Reset(void);//Restaura la camara al punto (0,0) puede ser arbitrario a otro punto en realidad, decidir luego
-void Finish(void);// Termina el programa
-void startKeyboardReading(void);//Inicia thread para la lectura de las teclas presionadas por el usuario ¿EventListener?
-void keyPressed(void);//Switch? con las distintas opciones dependiendo la tecla
-void DrawPolygon(void);//Dibuja el polygono dado un point** haciendo n llamados a bresenham, (Tomar en cuenta dibuja posicion [n,n] a [0,0] al final o inicio de la ejecucion
-void PaintPolygon(void);// Pinta el poligono con un color RGB solido, revisar algoritmo de torres
-void TexturePolygon(void);//Pinta el poligono a partir de una textura en un archivo avs. (Ya esta implementado practicamente, solo es unificar el frameBuffer con el buffer dado por el metodo cargarImgBuffer()
-void SimplePolygon(void);//Solo bordes
-
-void cargarImgBuffer(void);
-void guardarImgBuffer(char *filename);
-
-#endif // MAIN_H
+#endif /* MAIN_H */
