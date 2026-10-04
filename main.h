@@ -10,6 +10,9 @@
 #include <time.h>
 #include <errno.h>
 
+#define VRES 768
+#define HRES 1366
+
 typedef struct
 {
   double r;
@@ -37,9 +40,8 @@ typedef enum {
   LIMON
 } PROVINCES;
 
-
 void plot(int x, int y);
-void color_line(COLOR *c, PROVINCES province);
+void color_province(COLOR *c, PROVINCES province);
 void bresenham(int x0, int y0, int x1, int y1);
 void draw_scene();
 

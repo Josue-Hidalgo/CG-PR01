@@ -11,81 +11,7 @@ COLOR current_color;
 
 int main(int argc, char *argv[])
 {
-  //                  //
-  //    Argumentos    //
-  //                  //
-
-  // Restricción: # de argumentos
-  if (argc != 4)
-  {
-    printf("Uso: %s <resolucion> <# lineas> <# veces>\n", argv[0]);
-    printf("Ejemplo: %s 256 100 500\n", argv[0]);
-    return 1;
-  }
-
-  // Restricción: Deben ser números
-  // Arreglo: la version original usaba "end" sin inicializar (leia basura y
-  // podia botar el programa). ahora convertimos con strtol y revisamos que
-  // el argumento sea de verdad un numero :)
-
-  char *endptr;
-  long vals[3];
-  const char *nombres[3] = {"la resolucion", "el # de lineas", "el # de veces"};
-
-  for (int i = 0; i < 3; i++)
-  {
-    errno = 0;
-    vals[i] = strtol(argv[i + 1], &endptr, 10);
-
-    // no era un numero (o traia basura pegada, tipo "12abc")
-    if (endptr == argv[i + 1] || *endptr != '\0')
-    {
-      printf("Mmm.. %s ('%s') no parece un numero entero valido :/  probemos otra vez!\n", nombres[i], argv[i + 1]);
-      return 1;
-    }
-
-    // el numero era valido pero gigantesco, no cabe en un int
-    if (errno != 0 || vals[i] > 2147483647L || vals[i] < -2147483648L)
-    {
-      printf("Wow, %s ('%s') se pasa de grande!! usemos un numero mas pequeño porfa..\n", nombres[i], argv[i + 1]);
-      return 1;
-    }
-  }
-
-  // Obteniendo Argumentos
-  RES = (int)vals[0];    // Resolucion
-  NLINES = (int)vals[1]; // # Líneas
-  NTIMES = (int)vals[2]; // # Veces
-
-  // sin esto un RES de 0 o negativo revienta el malloc y los algoritmos 
-  if (RES <= 0)
-  {
-    printf("La resolucion tiene que ser mayor que 0, (me pasaste %d) :c\n", RES);
-    return 1;
-  }
-  if (NLINES < 0 || NTIMES < 0)
-  {
-    printf("Ni el # de lineas ni el # de veces pueden ser negativos\n");
-    return 1;
-  }
-
-  //                  //
-  // Generando Líneas //
-  //                  //
-
-  // Reserva de memoria
-  lines = (LINE *)malloc(NLINES * sizeof(LINE));
-
-  // si pidieron lineas pero no hubo memoria, mejor cancelamos y avisamos
-  if (NLINES > 0 && lines == NULL)
-  {
-    printf("Uy, no me alcanzo la memoria para %d lineas :c  probemos con menos!\n", NLINES);
-    return 1;
-  }
-
-  for (int i = 0; i < NLINES; i++)
-    lines[i] = generate_random_line();
-
+  
   //                  //
   //      Ventana     //
   //                  //
@@ -94,35 +20,29 @@ int main(int argc, char *argv[])
   int i, j;
 
   // --- Reserva de Memoria ---
-  buffer = (COLOR **)malloc(RES * sizeof(COLOR *));
-
-  // si la resolucion es enorme puede que no quepa en memoria, lo revisamos
-  // para no explotar mas adelante :]
+  buffer = (COLOR **)malloc(HRES * sizeof(COLOR *));
   if (buffer == NULL)
   {
-    printf("Uy, no me alcanzo la memoria para una ventana de %dx%d :c  probemos una resolucion mas pequeña!\n", RES, RES);
+    printf("Uy, no me alcanzo la memoria para una ventana de %dx%d :c  probemos una resolucion mas pequeña!\n", HRES, VRES);
     return 1;
   }
 
-  for (i = 0; i < RES; i++)
+  for (i = 0; i < HRES; i++)
   {
-    buffer[i] = (COLOR *)malloc(RES * sizeof(COLOR));
-
-    // si falla a medio camino, liberamos lo que ya pedimos
+    buffer[i] = (COLOR *)malloc(VRES * sizeof(COLOR));
     if (buffer[i] == NULL)
     {
-      printf("Uy, no me alcanzo la memoria para una ventana de %dx%d :c  probemos una resolucion mas pequeña!\n", RES, RES);
+      printf("Uy, no me alcanzo la memoria para una ventana de %dx%d :c  probemos una resolucion mas pequeña!\n", HRES, VRES);
       for (j = 0; j < i; j++)
         free(buffer[j]);
       free(buffer);
-      free(lines);
       return 1;
     }
   }
 
   // --- Pantalla en Negro ---
-  for (i = 0; i < RES; i++)
-    for (j = 0; j < RES; j++)
+  for (i = 0; i < HRES; i++)
+    for (j = 0; j < VRES; j++)
     {
       buffer[i][j].r = 0;
       buffer[i][j].g = 0;
@@ -131,32 +51,11 @@ int main(int argc, char *argv[])
 
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-  glutInitWindowSize(RES, RES);
+  glutInitWindowSize(HRES, VRES);
   glutCreateWindow("Mesa Example");
   glClear(GL_COLOR_BUFFER_BIT);
-  gluOrtho2D(-0.5, RES + 0.5, -0.5, RES + 0.5);
+  gluOrtho2D(-0.5, HRES + 0.5, -0.5, VRES + 0.5);
   glutDisplayFunc(draw_scene);
-
-  
-  
-
-
-  //                  //
-  //  Dibujar Líneas  //
-  //                  //
-
-  // primera pasada: plot vacio, medimos el tiempo puro de cada algoritmo
-  plot = plot_nothing;
-  run_all_algorithms(0);
-
-  // segunda pasada: plot que pinta en el buffer (version GLUT/Mesa)
-  // ojo: NO se borra nada entre algoritmos, asi se ve si todos escogen
-  // exactamente los mismos pixeles (deberia quedar de un solo color al final)
-  plot = plot_something;
-  run_all_algorithms(1);
-
-  // resultados finales en la consola, como pide el enunciado
-  print_results();
 
   //                  //
   //  Fin del Archivo //
@@ -169,13 +68,10 @@ int main(int argc, char *argv[])
   //Liberando  Memoria//
   //                  //
 
-  free(lines);
-  for (i = 0; i < RES; i++)
+  for (i = 0; i < HRES; i++)
     free(buffer[i]);
   free(buffer);
 }
-
-
 
 /*
  * draw_scene():
@@ -188,7 +84,7 @@ void draw_scene()
   COLOR color;
 
   for (i = 0; i < last_x; i++)
-    for (j = 0; j < RES; j++)
+    for (j = 0; j < VRES; j++)
     {
       glColor3f(buffer[i][j].r, buffer[i][j].g, buffer[i][j].b);
       glBegin(GL_POINTS);
@@ -196,8 +92,8 @@ void draw_scene()
       glEnd();
     }
 
-  for (i = last_x; i < RES; i++)
-    for (j = 0; j < RES; j++)
+  for (i = last_x; i < HRES; i++)
+    for (j = 0; j < VRES; j++)
     {
 
       glColor3f(buffer[i][j].r, buffer[i][j].g, buffer[i][j].b);
@@ -228,7 +124,7 @@ void draw_scene()
 void plot(int x, int y)
 {
   // Ángel de la Guarda, dulce compañía, no me desampares ni de noche ni de día.
-  if (x < 0 || x >= RES || y < 0 || y >= RES)
+  if (x < 0 || x >= HRES || y < 0 || y >= VRES)
     return;
 
   buffer[x][y] = current_color;
