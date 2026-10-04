@@ -1,25 +1,25 @@
 CC=cc
 NASM=nasm
 
-OBJECTS=main.o Bresenham.o
+OBJECTS=src/main.o src/Bresenham.o
 OUTPUT=main
 
-CFLAGS=-O0 -I/usr/local/Mesa-3.4/include
-LDLIBS=-lX11 -lglut -lGLU -lGL -lm -lXext -lXmu
+CFLAGS=-O0 -Isrc -I/usr/local/Mesa-3.4/include
 LDFLAGS=-L/usr/local/Mesa-3.4/lib -L/usr/X11R6/lib
+LDLIBS=-lX11 -lglut -lGLU -lGL -lm -lXext -lXmu
 
 .PHONY: all run clean
 
 all: $(OUTPUT)
 
 $(OUTPUT): $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $(OUTPUT) $(OBJECTS) $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
 
-main.o: main.c main.h
-	$(CC) $(CFLAGS) -c main.c -o main.o
+src/main.o: src/main.c src/main.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
-Bresenham.o: Bresenham.s
-	$(NASM) -f elf64 Bresenham.s -o Bresenham.o
+src/Bresenham.o: src/Bresenham.s
+	$(NASM) -f elf64 $< -o $@
 
 run: $(OUTPUT)
 	./$(OUTPUT)

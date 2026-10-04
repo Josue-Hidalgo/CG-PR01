@@ -40,13 +40,20 @@ typedef enum {
   LIMON
 } PROVINCES;
 
+typedef enum {
+  DISPLAY_MODE,
+  ZOOM,
+  PAN,
+  ROTATION,
+  RESTART,
+  EXIT
+} MENU;
+
 
 extern void bresenham(int x0, int y0, int x1, int y1);
 
-void plot(int x, int y);
-void color_province(COLOR *c, PROVINCES province);
-void draw_scene();
 
+void Display(void);
 void Zoom(void);//Operacion zoom usar matriz dada por torres, entrada seria el delta de crecimiento o decrecimiento, arbitrario o configurable
 void Pan(void);//Operacion Pan (mover) dada por torres, misma idea que con zoom, valor (x,y) para mover la ventana
 void Rotate(void);//Operacion de rotar el poligono (Usar Rad)
