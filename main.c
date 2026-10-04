@@ -1,65 +1,16 @@
-// Headers
 #include "main.h"
-#include <errno.h>
 
-clock_t start, end;       // Contar tiempo
-double time_passed;
 COLOR **buffer;           // Framebuffer
-int RES, NLINES, NTIMES;
-LINE *lines;              // Tabla de Líneas
 
-// color activo que usa plot_something al pintar. lo dejamos global para que
-// la rutina plot(x, y) reciba solo 2 argumentos como pide el enunciado :]
+/*
+ * current_color:
+ * Color Activo que usa plot_something al pintar. lo dejamos global para que
+ * la rutina plot(x, y) reciba solo 2 argumentos como pide el enunciado
+ */
 COLOR current_color;
-
-// puntero a la version de plot en uso. main lo cambia entre plot_nothing y
-// plot_something para medir "tiempo puro" vs "tiempo dibujando"
-void (*plot)(int, int);
-
-// aca guardamos los 10 tiempos: 5 algoritmos por 2 versiones de plot
-// [0] = plot vacio (tiempo puro), [1] = plot que pinta en el buffer
-double results[5][2];
-
-// nombres para la tablita final de la consola
-const char *ALG_NAMES[5] = {
-  "Fuerza Bruta",
-  "Incremental",
-  "Incremental v2",
-  "Bresenham (Punto Medio)",
-  "Bresenham (Punto Medio) Ensamblador"
-};
-
-
-LINE generate_random_line();
-
-void color_line(COLOR *c, ALGORITHM algorithm);
-// las 2 versiones de la rutina plot(x, y)
-void plot_nothing(int x, int y);
-void plot_something(int x, int y);
-
-void line_bresenham(int x0, int y0, int x1, int y1);
-
-
-double draw_bresenham();
-
-void run_all_algorithms(int version);
-void print_results();
-
-void draw_scene();
 
 int main(int argc, char *argv[])
 {
-  //                  //
-  // Semilla #randoms //
-  //                  //
-
-  srand(time(NULL));
-
-  //                  //
-  //  Semilla Tiempo  //
-  //                  //
-
-
   //                  //
   //    Argumentos    //
   //                  //
@@ -67,7 +18,6 @@ int main(int argc, char *argv[])
   // Restricción: # de argumentos
   if (argc != 4)
   {
-    printf("Ups!! necesito exactamente 3 argumentos, ni mas ni menos :o\n");
     printf("Uso: %s <resolucion> <# lineas> <# veces>\n", argv[0]);
     printf("Ejemplo: %s 256 100 500\n", argv[0]);
     return 1;
@@ -269,24 +219,15 @@ void draw_scene()
 //-------------------------------------------------------------------------------
 
 /*
- * plot_nothing(int x, int y):
- * - No pinta, nos funcionará para hacer calculo de tiempo sin afectar el framebuffer.
- */
-void plot_nothing(int x, int y)
-{
-  return ;
-}
-
-/*
- * plot_something(int x, int y):
+ * plot(int x, int y):
  * - Pinta en el buffer un pixel con el color activo (current_color).
  * - Cambio respecto al original: antes recibia el COLOR por parametro, ahora
  *   usa el global current_color para que plot sea plot(x, y) de 2 argumentos
  *   igual que plot_nothing y se puedan intercambiar con un puntero.
  */
-void plot_something(int x, int y)
+void plot(int x, int y)
 {
-  // Ángel de la guarda anti Segmentation Fault: jamas escribimos fuera del buffer :]
+  // Ángel de la Guarda, dulce compañía, no me desampares ni de noche ni de día.
   if (x < 0 || x >= RES || y < 0 || y >= RES)
     return;
 
@@ -299,51 +240,66 @@ void plot_something(int x, int y)
 }
 
 /*
- * color_line(COLOR c, ALGORITHM algorithm):
- * - Función cambia el color de una línea para antes de dibujarla.
+ * color_province(COLOR c, PROVINCES province):
+ * - Función cambia el color de una línea de un polígono de la provincia para antes de dibujarla.
  * - Uso: usar esta función al inicio de aplicar un algoritmo de trazado.
  */
-void color_line(COLOR *c, ALGORITHM algorithm)
+void color_province(COLOR *c, PROVINCES province)
 {
-  switch (algorithm)
-  {
-  case BRUTEFORCE:
-    c->r = 1.0;
-    c->g = 0.0;
-    c->b = 0.0;
+    switch (province)
+    {
+    case SANJOSE:
+        // Morado
+        c->r = 0.5;
+        c->g = 0.0;
+        c->b = 0.5;
+        break;
 
-    break;
+    case ALAJUELA:
+        // Rojo
+        c->r = 1.0;
+        c->g = 0.0;
+        c->b = 0.0;
+        break;
 
-  case INCREMENTAL:
-    c->r = 0.0;
-    c->g = 1.0;
-    c->b = 0.0;
+    case CARTAGO:
+        // Azul
+        c->r = 0.0;
+        c->g = 0.0;
+        c->b = 1.0;
+        break;
 
-    break;
+    case HEREDIA:
+        // Amarillo
+        c->r = 1.0;
+        c->g = 1.0;
+        c->b = 0.0;
+        break;
 
-  case INCREMENTAL_V2:
-    c->r = 0.0;
-    c->g = 0.0;
-    c->b = 1.0;
-    break;
+    case GUANACASTE:
+        // Rosado
+        c->r = 1.0;
+        c->g = 0.0;
+        c->b = 0.5;
+        break;
 
-  case BRESENHAM:
-    c->r = 1.0;
-    c->g = 1.0;
-    c->b = 0.0;
+    case PUNTARENAS:
+        // Naranja
+        c->r = 1.0;
+        c->g = 0.5;
+        c->b = 0.0;
+        break;
 
-    break;
+    case LIMON:
+        // Verde
+        c->r = 0.0;
+        c->g = 1.0;
+        c->b = 0.0;
+        break;
 
-  case BRESENHAM_ASSEMBLY:
-    c->r = 1.0;
-    c->g = 0.0;
-    c->b = 1.0;
-
-    break;
-
-  default:
-    break;
-  }
+    default:
+        break;
+    }
 }
 
 //                          //
@@ -351,12 +307,10 @@ void color_line(COLOR *c, ALGORITHM algorithm)
 //                          //
 
 /*
- * line_bresenham(int x0, int y0, int x1, int y1):
- * - Bresenham de punto medio, pero ampliado a los 8 octantes (el de clase
- *   solo cubria uno). todo con enteros, sin floats, por eso es el mas rapido.
- * - sx y sy son la direccion (+1 o -1) para que funcione en cualquier sentido.
+ * bresenham(int x0, int y0, int x1, int y1):
+ * - Algoritmo de Bresenham o Punto Medio para los 8 octantes.
  */
-void line_bresenham(int x0, int y0, int x1, int y1)
+void bresenham(int x0, int y0, int x1, int y1)
 {
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -645,25 +599,4 @@ void line_bresenham(int x0, int y0, int x1, int y1)
             plot(xp, yp);
         }
     }
-}
-
-/*
- * draw_bresenham():
- * - Dibuja todas las lineas NTIMES veces con Bresenham en C y devuelve el tiempo.
- */
-double draw_bresenham()
-{
-  color_line(&current_color, BRESENHAM);
-
-  start = clock();
-  for (int i = 0; i < NTIMES; i++){
-    for (int j = 0; j < NLINES; j++){
-          line_bresenham(lines[j].A.x, lines[j].A.y, lines[j].B.x, lines[j].B.y);      
-        }
-      glFlush();
-  }
-    
-  end = clock();
-
-  return (double)(end - start) / CLOCKS_PER_SEC;
 }

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <errno.h>
 
 typedef struct
 {
@@ -27,12 +28,20 @@ typedef struct {
 } LINE;
 
 typedef enum {
-  BRUTEFORCE,
-  INCREMENTAL,
-  INCREMENTAL_V2,
-  BRESENHAM,
-  BRESENHAM_ASSEMBLY
-} ALGORITHM;
+  SANJOSE,
+  ALAJUELA,
+  CARTAGO,
+  HEREDIA,
+  GUANACASTE,
+  PUNTARENAS,
+  LIMON
+} PROVINCES;
+
+
+void plot(int x, int y);
+void color_line(COLOR *c, PROVINCES province);
+void bresenham(int x0, int y0, int x1, int y1);
+void draw_scene();
 
 void Zoom(void);//Operacion zoom usar matriz dada por torres, entrada seria el delta de crecimiento o decrecimiento, arbitrario o configurable
 void Pan(void);//Operacion Pan (mover) dada por torres, misma idea que con zoom, valor (x,y) para mover la ventana
