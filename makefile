@@ -1,19 +1,29 @@
-OBJECTS=main.o Bresenham.o
-OUTPUT=main
+CC      = gcc
+CFLAGS  = -Wall -Wextra -g -Isrc
+LDLIBS  = -lX11 -lglut -lGLU -lGL -lm -lXext -lXmu
+TARGET  = mapa
 
-CFLAGS=-O0 -I/usr/local/Mesa-3.4/include
-#LDLIBS=-lX11 -lglut -lMesaGLU -lMesaGL -lm -lXext -lXmu
-LDLIBS=-lX11 -lglut -lGLU -lGL -lm -lXext -lXmu
-LDFLAGS=-L/usr/local/Mesa-3.4/lib -L/usr/X11R6/lib
+SRCS    = $(wildcard src/*.c)
+OBJS    = $(patsubst src/%.c,build/%.o,$(SRCS)) build/Bresenham.o
 
-$(OUTPUT):	$(OBJECTS)
-	cc	$(CFLAGS) $(LDFLAGS) -o $(OUTPUT) $(OBJECTS) $(LDLIBS)
+all: $(TARGET)
 
-$(OBJECTS):	main.h
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) -o $@ $(LDLIBS)
 
-run: $(OUTPUT)
-	./$(OUTPUT) 256 100 500
+build/%.o: src/%.c $(wildcard src/*.h) | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+build/Bresenham.o: src/Bresenham.s | build
+	nasm -f elf64 $< -o $@
+
+build:
+	mkdir -p build
+
+run: $(TARGET)
+	./$(TARGET)
 
 clean:
-	rm	-f	*.o
-	rm	-f	main
+	rm -rf build $(TARGET)
+
+.PHONY: all run clean
