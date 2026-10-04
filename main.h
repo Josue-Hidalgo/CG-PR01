@@ -42,7 +42,6 @@ typedef enum {
 
 void plot(int x, int y);
 void color_province(COLOR *c, PROVINCES province);
-void bresenham(int x0, int y0, int x1, int y1);
 void draw_scene();
 
 void Zoom(void);//Operacion zoom usar matriz dada por torres, entrada seria el delta de crecimiento o decrecimiento, arbitrario o configurable
