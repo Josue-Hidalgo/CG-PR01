@@ -16,7 +16,7 @@
 #include <errno.h>
 
 #define VRES 768
-#define HRES 1366
+#define HRES 768
 
 typedef struct
 {
