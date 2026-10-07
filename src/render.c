@@ -281,7 +281,7 @@ static int build_edges(const POINT *pts, int count, EDGE **edges, int *ymin, int
  * Scanline con color solido.
  * En resumen es el algrotimo de Torres, la version 3
  */
-static void scanline_fill_color(const POLYGON *p)
+void scanline_fill_color(const POLYGON *p)
 {
   POINT *pts;
   EDGE *edges;
@@ -364,7 +364,7 @@ static void scanline_fill_color(const POLYGON *p)
  * texture[][] (repetida en mosaico segun la posicion en pantalla).
  * Si no hay textura cargada, rellena con el color solido de la provincia.
  */
-static void scanline_fill_texture(const POLYGON *p)
+void scanline_fill_texture(const POLYGON *p)
 {
   POINT *pts;
   EDGE *edges;
