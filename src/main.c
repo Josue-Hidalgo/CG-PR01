@@ -16,13 +16,13 @@ int main(int argc, char *argv[])
   /* GLUT primero, luego UNA sola ventana, luego el menu. */
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
-  glutInitWindowSize(HRES, VRES);
+  glutInitWindowSize(HRES + PANEL_W, VRES);
   glutCreateWindow("Mapa de Costa Rica");
 
   glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluOrtho2D(-0.5, HRES + 0.5, -0.5, VRES + 0.5);
+  gluOrtho2D(-0.5, HRES + PANEL_W + 0.5, -0.5, VRES + 0.5);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
 
@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
   /* Ejecutar desde la raiz del proyecto para que estas rutas funcionen. */
   if (data_load_map("assets/cr.json") != 0)
     fprintf(stderr, "Aviso: no se pudo cargar assets/cr.json\n");
-  if (data_load_texture("assets/Ejemplo.avs") != 0)
-    fprintf(stderr, "Aviso: no se pudo cargar assets/Ejemplo.avs\n");
+  if (data_load_textures() != 0)
+    fprintf(stderr, "Aviso: no se pudieron cargar todas las texturas de assets/\n");
 
   geometry_reset();
   gui_init();

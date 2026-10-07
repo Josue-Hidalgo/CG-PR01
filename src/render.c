@@ -1,5 +1,6 @@
 #include "render.h"
 #include "geometry.h"
+#include "GUI.h"
 
 COLOR **buffer = NULL;
 COLOR current_color = {1.0, 1.0, 1.0};
@@ -127,6 +128,7 @@ void draw_scene(void)
   }
 
   present_buffer();
+  gui_draw_panel();
   glFlush();
 }
 
@@ -372,6 +374,8 @@ void scanline_fill_texture(const POLYGON *p)
   int nedges, ymin, ymax, scanline;
   int i, k, n, x, x0, x1, u, v;
 
+  // cada provincia usa su propia textura
+  data_select_texture(p->province);
   if (texture == NULL || texture_w <= 0 || texture_h <= 0)
   {
     scanline_fill_color(p);
