@@ -77,8 +77,9 @@ void geometry_rotate(double rad)
 }
 
 /*
- * M = T(centro + pan) * R * S * T(-centro)
- * Zoom y rotacion se hacen alrededor del centro del area del mapa.
+ * geometry_matrix(void): 
+ * - M = T(centro + pan) * R * S * T(-centro)
+ * - Zoom y rotacion se hacen alrededor del centro del area del mapa.
  */
 MAT3 geometry_matrix(void)
 {
@@ -135,7 +136,11 @@ int geometry_clip_line(POINT *a, POINT *b)
     int code_b = clip_code(x1, y1);
 
     /* Mientras no se pueda aceptar ni rechazar trivialmente. */
-    while (((code_a | code_b) != 0) && ((code_a & code_b) == 0))
+    while (
+      ((code_a | code_b) != 0)  
+      && 
+      ((code_a & code_b) == 0)   
+    )
     {
         int outside = code_a != 0 ? code_a : code_b;
 

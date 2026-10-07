@@ -18,6 +18,9 @@
 #define VRES 768
 #define HRES 768
 
+// ancho del panel de botones, va a la derecha del mapa y fuera del framebuffer
+#define PANEL_W 200
+
 typedef struct
 {
   double r;

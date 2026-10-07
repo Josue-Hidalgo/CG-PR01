@@ -11,4 +11,7 @@
 void gui_init(void); /* registra menu y callbacks de teclado (llamar despues de crear la ventana) */
 void gui_quit(void); /* libera todo y termina el programa */
 
+// dibuja el panel a la derecha del mapa (llamar en draw_scene)
+void gui_draw_panel(void);
+
 #endif /* GUI_H */
