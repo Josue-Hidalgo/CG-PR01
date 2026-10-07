@@ -51,6 +51,6 @@ POINT *polygon_to_screen(const POLYGON *p);
 void DrawPolygon(const POLYGON *p);    /* bordes con bresenham */
 void PaintPolygon(const POLYGON *p);   /* relleno de color solido */
 void TexturePolygon(const POLYGON *p); /* relleno con textura */
-void scanline_fill(const POLYGON *p, int textured); //Alg Scanline, textured=1 relleno con textura, textured=0 relleno solido
-
+static void scanline_fill_color(const POLYGON *p);
+static void scanline_fill_texture(const POLYGON *p);
 #endif /* RENDER_H */

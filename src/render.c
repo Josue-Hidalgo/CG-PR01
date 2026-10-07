@@ -5,7 +5,9 @@ COLOR **buffer = NULL;
 COLOR current_color = {1.0, 1.0, 1.0};
 DISPLAY_MODES current_mode = MODE_SIMPLE;
 
+static GLfloat *pixels = NULL; // copia lineal del buffer para glDrawPixels 
 
+// ---------- Ciclo de vida ---------- 
 
 int render_init(void)
 {
@@ -60,6 +62,7 @@ void render_clear(void)
 
 /* ---------- Pantalla ---------- */
 
+// Vuelca el framebuffer a la ventana con una sola llamada (mucho mas rapido que GL_POINTS).
 static void present_buffer(void)
 {
   int x, y, idx;
@@ -103,9 +106,11 @@ static void draw_map(void)
     default:
       break;
     }
+    DrawPolygon(p); // los bordes siempre van encima
   }
 }
 
+// Callback de GLUT: redibuja TODO el cuadro.
 void draw_scene(void)
 {
   render_clear();
@@ -139,18 +144,24 @@ void plot(int x, int y)
   buffer[x][y] = current_color;
 }
 
+// Color de cada provincia (usar al inicio de un algoritmo de trazado).
 void color_province(COLOR *c, PROVINCES province)
 {
   switch (province)
   {
+  case SANJOSE: // Morado
     c->r = 0.5; c->g = 0.0; c->b = 0.5;
     break;
+  case ALAJUELA: // Rojo
     c->r = 1.0; c->g = 0.0; c->b = 0.0;
     break;
+  case CARTAGO: // Azul 
     c->r = 0.0; c->g = 0.0; c->b = 1.0;
     break;
+  case HEREDIA: // Amarillo 
     c->r = 1.0; c->g = 1.0; c->b = 0.0;
     break;
+  case GUANACASTE: //        Rosado
     c->r = 1.0; c->g = 0.0; c->b = 0.5;
     break;
   case PUNTARENAS: /* Naranja */
