@@ -136,9 +136,9 @@ int geometry_clip_line(POINT *a, POINT *b)
 
     /* Mientras no se pueda aceptar ni rechazar trivialmente. */
     while (
-      ((code_a | code_b) != 0)   // ¿Ambos ?
+      ((code_a | code_b) != 0)  
       && 
-      ((code_a & code_b) == 0)   // ¿Ambos son Cero?
+      ((code_a & code_b) == 0)   
     )
     {
         int outside = code_a != 0 ? code_a : code_b;
