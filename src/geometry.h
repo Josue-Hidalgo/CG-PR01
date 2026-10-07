@@ -1,12 +1,6 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
-/*
- * geometry.h - [Persona 2: Geometria]
- * Zoom, desplazamiento (pan), rotacion y clipping.
- * Las transformaciones afectan SOLO al mapa (nunca al panel de la GUI).
- */
-
 #include "main.h"
 #include "data.h"
 
