@@ -44,10 +44,17 @@ MAT3 mat3_rotate(double rad);
 MAT3 geometry_matrix(void);
 VEC2 geometry_apply(MAT3 m, VEC2 p);
 
-/*
- * Clipping de una linea contra la ventana [0,HRES-1] x [0,VRES-1].
- * Devuelve 1 si queda algo visible (y modifica los extremos), 0 si se descarta.
- */
+// Clipping
 int geometry_clip_line(POINT *a, POINT *b);
+
+// Códigos de Clipping
+enum
+{
+    CS_INSIDE = 0,
+    CS_LEFT   = 1,
+    CS_RIGHT  = 2,
+    CS_BOTTOM = 4,
+    CS_TOP    = 8
+};
 
 #endif /* GEOMETRY_H */
