@@ -2,8 +2,6 @@
 
 CAMERA camera = {0.0, 0.0, 1.0, 0.0};
 
-/* ---------- Matrices ---------- */
-
 MAT3 mat3_identity(void)
 {
   MAT3 r = {{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}};
@@ -50,8 +48,6 @@ MAT3 mat3_rotate(double rad)
   return r;
 }
 
-/* ---------- Camara ---------- */
-
 void geometry_reset(void)
 {
   camera.tx = 0.0;
@@ -76,11 +72,6 @@ void geometry_rotate(double rad)
   camera.angle += rad;
 }
 
-/*
- * geometry_matrix(void): 
- * - M = T(centro + pan) * R * S * T(-centro)
- * - Zoom y rotacion se hacen alrededor del centro del area del mapa.
- */
 MAT3 geometry_matrix(void)
 {
   double cx = HRES / 2.0;
@@ -100,8 +91,6 @@ VEC2 geometry_apply(MAT3 m, VEC2 p)
   r.y = m.m[1][0] * p.x + m.m[1][1] * p.y + m.m[1][2];
   return r;
 }
-
-/* ---------- Clipping: Cohen-Sutherland ---------- */
 
 static int clip_code(double x, double y)
 {
@@ -135,7 +124,6 @@ int geometry_clip_line(POINT *a, POINT *b)
     int code_a = clip_code(x0, y0);
     int code_b = clip_code(x1, y1);
 
-    /* Mientras no se pueda aceptar ni rechazar trivialmente. */
     while (
       ((code_a | code_b) != 0)  
       && 
@@ -195,11 +183,9 @@ int geometry_clip_line(POINT *a, POINT *b)
         }
     }
 
-    /* Rechazo: ambos fuera por un mismo lado. */
     if ((code_a & code_b) != 0)
         return 0;
 
-    /* Aceptación: ambos extremos dentro. */
     a->x = (int)lround(x0);
     a->y = (int)lround(y0);
     b->x = (int)lround(x1);

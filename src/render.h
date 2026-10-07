@@ -1,29 +1,14 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-/*
- * render.h - [Ian: Despliegue]
- * Framebuffer, plot, Bresenham, bordes, relleno y textura.
- */
-
 #include "main.h"
 #include "data.h"
 
-/* Estado global del despliegue (definido en render.c) */
 extern COLOR **buffer;
 extern COLOR current_color;
 extern DISPLAY_MODES current_mode;
 
 
-/*
- * Tabla de bordes para el scanline. Cada borde no horizontal guarda:
- *   ylow/yhigh : extremos en y (ylow < yhigh)
- *   x          : interseccion con la scanline actual (solo valida si esta activo)
- *   dxdy       : cambio de x por unidad de y (inverso de la pendiente)
- *   xhigh      : x del extremo superior (para calcular x al activarlo)
- * El borde cubre las scanlines y con ylow < y <= yhigh (semiabierto, para no
- * contar doble los vertices).
- */
 typedef struct
 {
   int ylow, yhigh;

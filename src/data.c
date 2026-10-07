@@ -2,7 +2,6 @@
 #include <string.h>
 #include <ctype.h>
 
-// margen alrededor del mapa en la ventana inicial (fraccion del tamano)
 #define MAP_MARGIN 0.03
 
 MAP map = {NULL, 0};
@@ -12,13 +11,9 @@ COLOR **texture = NULL;
 int texture_w = 0;
 int texture_h = 0;
 
-// "id" de cada provincia en cr.json, en el mismo orden que PROVINCES
 static const char *province_ids[PROVINCE_COUNT] = {
     "CRSJ", "CRA", "CRC", "CRH", "CRG", "CRP", "CRL"};
 
-// ---------- lectura de cr.json ----------
-
-// lee todo el archivo a un string, el que llama hace free()
 static char *read_file(const char *path)
 {
   FILE *f;
@@ -48,7 +43,6 @@ static char *read_file(const char *path)
   return text;
 }
 
-// devuelve el '}' que cierra el objeto que empieza en s (NULL si el archivo viene cortado)
 static char *find_object_end(char *s)
 {
   int depth = 0;
@@ -61,7 +55,6 @@ static char *find_object_end(char *s)
 
     if (in_string)
     {
-      // saltar escapados como \" para no cerrar el string antes de tiempo
       if (*s == '\\' && s[1] != '\0')
         s++;
       else if (*s == '"')
@@ -80,7 +73,6 @@ static char *find_object_end(char *s)
   return s - 1;
 }
 
-// busca "id": "XXX" dentro del feature y lo pasa a PROVINCES
 static int read_province(const char *feature, PROVINCES *province)
 {
   const char *s = strstr(feature, "\"id\"");
@@ -103,14 +95,12 @@ static int read_province(const char *feature, PROVINCES *province)
   return -1;
 }
 
-// el mapa se queda con el arreglo de vertices, no liberarlo afuera !!
 static int add_polygon(PROVINCES province, VEC2 *vertices, int count)
 {
   POLYGON *tmp;
 
   if (map.count == map_capacity)
   {
-    // duplicar para no hacer realloc por cada poligono
     map_capacity = map_capacity == 0 ? 16 : map_capacity * 2;
     tmp = (POLYGON *)realloc(map.polygons, map_capacity * sizeof(POLYGON));
     if (tmp == NULL)
@@ -125,10 +115,8 @@ static int add_polygon(PROVINCES province, VEC2 *vertices, int count)
   return 0;
 }
 
-// cierra un anillo y lo pasa al mapa (o lo libera si no sirve)
 static int finish_ring(PROVINCES province, VEC2 *v, int count)
 {
-  // GeoJSON repite el primer vertice al final, pero render ya cierra el poligono solo
   if (count > 1 && v[0].x == v[count - 1].x && v[0].y == v[count - 1].y)
     count--;
 
@@ -146,8 +134,6 @@ static int finish_ring(PROVINCES province, VEC2 *v, int count)
   return 0;
 }
 
-// recorre "coordinates" contando [ ], cada anillo empieza en ring_depth (2 Polygon, 3 MultiPolygon)
-// solo se guarda el primer anillo de cada poligono, los otros serian huecos y cr.json no trae
 static int parse_coordinates(const char *s, int ring_depth, PROVINCES province)
 {
   VEC2 *v = NULL, *tmp;

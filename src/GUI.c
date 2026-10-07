@@ -7,9 +7,8 @@
 
 #define ZOOM_STEP 1.1
 #define PAN_STEP 20.0
-#define ROTATE_STEP 0.1 /* radianes */
+#define ROTATE_STEP 0.1 
 
-// multiplicadores de velocidad: SHIFT rapido, CTRL lento
 #define SPEED_FAST 3.0
 #define SPEED_SLOW (1.0 / 3.0)
 
@@ -17,7 +16,6 @@
 #define BUTTON_H 28
 #define BUTTON_GAP 6
 
-// todo lo que el usuario puede pedir, venga del teclado, del panel o del menu
 typedef enum
 {
   ACT_MODE_SIMPLE,
@@ -36,7 +34,6 @@ typedef enum
   ACT_COUNT
 } ACTION;
 
-// coordenadas relativas al panel, (x, y) = esquina inferior izquierda
 typedef struct
 {
   int x, y, w, h;
@@ -56,13 +53,9 @@ static LABEL labels[8];
 static int label_count = 0;
 static int help_y = 0;
 
-// el panel tiene su propio buffer para no quitarle espacio ni centro al mapa
 static GLfloat *panel_pixels = NULL;
 static COLOR panel_color = {1.0, 1.0, 1.0};
 
-// ---------- acciones ----------
-
-// si vienen SHIFT y CTRL juntos gana CTRL
 static double current_speed(void)
 {
   int mods = glutGetModifiers();
@@ -81,14 +74,12 @@ static void do_action(ACTION action, double speed)
   case ACT_MODE_SIMPLE: current_mode = MODE_SIMPLE; break;
   case ACT_MODE_FILL: current_mode = MODE_FILL; break;
   case ACT_MODE_TEXTURE: current_mode = MODE_TEXTURE; break;
-  // pow para que rapido/lento sean simetricos entre zoom in y zoom out
   case ACT_ZOOM_IN: geometry_zoom(pow(ZOOM_STEP, speed)); break;
   case ACT_ZOOM_OUT: geometry_zoom(1.0 / pow(ZOOM_STEP, speed)); break;
   case ACT_PAN_LEFT: geometry_pan(-PAN_STEP * speed, 0); break;
   case ACT_PAN_RIGHT: geometry_pan(PAN_STEP * speed, 0); break;
   case ACT_PAN_UP: geometry_pan(0, PAN_STEP * speed); break;
   case ACT_PAN_DOWN: geometry_pan(0, -PAN_STEP * speed); break;
-  // angulo positivo = antihorario porque la y del framebuffer crece hacia arriba
   case ACT_ROTATE_CW: geometry_rotate(-ROTATE_STEP * speed); break;
   case ACT_ROTATE_CCW: geometry_rotate(ROTATE_STEP * speed); break;
   case ACT_RESET: geometry_reset(); break;
@@ -102,10 +93,8 @@ void gui_quit(void)
 {
   free(panel_pixels);
   panel_pixels = NULL;
-  exit(EXIT_SUCCESS); /* cleanup() de main.c se ejecuta por atexit */
+  exit(EXIT_SUCCESS); 
 }
-
-// ---------- menu contextual ----------
 
 static void menu_option(int option)
 {
@@ -137,16 +126,12 @@ static void create_menu(void)
   glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-// ---------- teclado ----------
-
-// teclas: 1 2 3 modo | m siguiente modo | + - zoom | q e rotar | r reiniciar | ESC salir
 static void keyboard(unsigned char key, int x, int y)
 {
   double speed = current_speed();
   (void)x;
   (void)y;
 
-  // con CTRL las letras llegan como codigos de control (CTRL+Q = 17)
   if ((glutGetModifiers() & GLUT_ACTIVE_CTRL) && key >= 1 && key <= 26)
     key = key + 'a' - 1;
   key = (unsigned char)tolower(key);
@@ -157,7 +142,6 @@ static void keyboard(unsigned char key, int x, int y)
   case '2': do_action(ACT_MODE_FILL, speed); break;
   case '3': do_action(ACT_MODE_TEXTURE, speed); break;
   case 'm': menu_option(DISPLAY_MODE); break;
-  // en teclado US '+' ya es SHIFT + '=', entonces '=' es el zoom normal y '+' el rapido
   case '+':
   case '=': do_action(ACT_ZOOM_IN, speed); break;
   case '-':
@@ -170,7 +154,6 @@ static void keyboard(unsigned char key, int x, int y)
   }
 }
 
-/* Flechas: desplazar el mapa */
 static void special(int key, int x, int y)
 {
   double speed = current_speed();
@@ -187,10 +170,6 @@ static void special(int key, int x, int y)
   }
 }
 
-// ---------- fuente 5x7 ----------
-
-// 7 filas de 5 bits por caracter (bit 4 = columna izquierda, fila 0 = arriba)
-// '<' '>' '^' son flechas y la 'v' minuscula es la flecha hacia abajo :P
 static const unsigned char font[128][7] = {
     ['A'] = {0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11},
     ['B'] = {0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E},
@@ -239,8 +218,6 @@ static const unsigned char font[128][7] = {
     ['v'] = {0x00, 0x04, 0x04, 0x04, 0x15, 0x0E, 0x04},
 };
 
-// ---------- panel ----------
-
 static void set_color(double r, double g, double b)
 {
   panel_color.r = r;
@@ -248,7 +225,6 @@ static void set_color(double r, double g, double b)
   panel_color.b = b;
 }
 
-// igual que plot() pero sobre el buffer del panel
 static void panel_plot(int x, int y)
 {
   int idx;
@@ -311,7 +287,6 @@ static void add_label(int x, int y, const char *text)
   label_count++;
 }
 
-// acomoda los botones de arriba hacia abajo
 static void layout_panel(void)
 {
   int x = PANEL_MARGIN;
@@ -362,7 +337,6 @@ static int is_active(const BUTTON *b)
 
 static void draw_button(const BUTTON *b)
 {
-  // borde, fondo y el modo actual marcado en azul
   set_color(0.55, 0.55, 0.6);
   fill_rect(b->x, b->y, b->w, b->h);
   if (is_active(b))
@@ -375,7 +349,6 @@ static void draw_button(const BUTTON *b)
   draw_text(b->x + (b->w - text_width(b->label, 2)) / 2, b->y + (b->h - 14) / 2, b->label, 2);
 }
 
-// se llama en cada draw_scene, despues del mapa
 void gui_draw_panel(void)
 {
   static const char *help[] = {
@@ -391,7 +364,6 @@ void gui_draw_panel(void)
       "CTRL:  LENTO"};
   int i;
 
-  // si no hubo memoria para el panel solo queda el teclado y el menu..
   if (panel_pixels == NULL)
     return;
 
@@ -414,15 +386,12 @@ void gui_draw_panel(void)
   for (i = 0; i < (int)(sizeof(help) / sizeof(help[0])); i++)
     draw_text(PANEL_MARGIN, help_y - i * 12, help[i], 1);
 
-  // el panel empieza justo donde termina el framebuffer del mapa
   glRasterPos2i(HRES, 0);
   glDrawPixels(PANEL_W, VRES, GL_RGB, GL_FLOAT, panel_pixels);
 }
 
-// clic izquierdo en el panel, tambien acepta SHIFT/CTRL para rapido/lento
 static void mouse(int button, int state, int x, int y)
 {
-  // GLUT da la y desde arriba, se usa el alto real por si la pantalla no deja abrir la ventana completa
   int px = x - HRES;
   int py = glutGet(GLUT_WINDOW_HEIGHT) - 1 - y;
   int i = 0;

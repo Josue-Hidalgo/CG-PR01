@@ -13,7 +13,6 @@ static void cleanup(void)
 
 int main(int argc, char *argv[])
 {
-  /* GLUT primero, luego UNA sola ventana, luego el menu. */
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
   glutInitWindowSize(HRES + PANEL_W, VRES);
@@ -33,7 +32,6 @@ int main(int argc, char *argv[])
   }
   atexit(cleanup);
 
-  /* Ejecutar desde la raiz del proyecto para que estas rutas funcionen. */
   if (data_load_map("assets/cr.json") != 0)
     fprintf(stderr, "Aviso: no se pudo cargar assets/cr.json\n");
   if (data_load_textures() != 0)
