@@ -131,37 +131,37 @@ void color_province(COLOR *c, PROVINCES province)
 {
   switch (province)
   {
-  case SANJOSE: // Morado
+  case SANJOSE: 
     c->r = 0.5;
     c->g = 0.0;
     c->b = 0.5;
     break;
-  case ALAJUELA: // Rojo
+  case ALAJUELA: 
     c->r = 1.0;
     c->g = 0.0;
     c->b = 0.0;
     break;
-  case CARTAGO: // Azul
+  case CARTAGO: 
     c->r = 0.0;
     c->g = 0.0;
     c->b = 1.0;
     break;
-  case HEREDIA: // Amarillo
+  case HEREDIA: 
     c->r = 1.0;
     c->g = 1.0;
     c->b = 0.0;
     break;
-  case GUANACASTE: //        Rosado
+  case GUANACASTE:
     c->r = 1.0;
     c->g = 0.0;
     c->b = 0.5;
     break;
-  case PUNTARENAS: /* Naranja */
+  case PUNTARENAS: 
     c->r = 1.0;
     c->g = 0.5;
     c->b = 0.0;
     break;
-  case LIMON: /* Verde */
+  case LIMON: 
     c->r = 0.0;
     c->g = 1.0;
     c->b = 0.0;
@@ -361,7 +361,6 @@ void scanline_fill_texture(const POLYGON *p)
   int nedges, ymin, ymax, scanline;
   int i, k, n, x, x0, x1, u, v;
 
-  // cada provincia usa su propia textura
   data_select_texture(p->province);
   if (texture == NULL || texture_w <= 0 || texture_h <= 0)
   {

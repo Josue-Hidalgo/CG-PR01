@@ -157,21 +157,18 @@ static int parse_coordinates(const char *s, int ring_depth, PROVINCES province)
         count = 0;
       else if (depth == ring_depth + 1 && ring == 0)
       {
-        // punto: [longitud, latitud]
         lon = strtod(s + 1, &end);
         while (isspace((unsigned char)*end) || *end == ',')
           end++;
         lat = strtod(end, &end);
         while (isspace((unsigned char)*end))
           end++;
-        // si no llega al ']' el punto venia mal formado..
         if (*end != ']')
           ok = 0;
 
         if (ok && count == capacity)
         {
           capacity = capacity == 0 ? 256 : capacity * 2;
-          // no perder el puntero original si realloc falla !!
           tmp = (VEC2 *)realloc(v, capacity * sizeof(VEC2));
           if (tmp == NULL)
             ok = 0;
@@ -183,7 +180,6 @@ static int parse_coordinates(const char *s, int ring_depth, PROVINCES province)
           v[count].x = lon;
           v[count].y = lat;
           count++;
-          // seguir justo despues de los numeros, el s++ del ciclo avanza uno mas
           s = end - 1;
         }
       }
@@ -207,7 +203,6 @@ static int parse_coordinates(const char *s, int ring_depth, PROVINCES province)
   return ok ? 0 : -1;
 }
 
-// un feature = una provincia con sus poligonos
 static int parse_feature(const char *feature)
 {
   PROVINCES province;
@@ -225,9 +220,6 @@ static int parse_feature(const char *feature)
   return parse_coordinates(coords, ring_depth, province);
 }
 
-// ventana -> viewport: la ventana (en grados) cubre todo el mapa y se agranda en un eje
-// para tener la proporcion del framebuffer, asi no se deforma
-// latitud y framebuffer crecen hacia arriba, no hay que invertir la y :)
 static void normalize_map(void)
 {
   double xmin, xmax, ymin, ymax, w, h, cx, cy;
@@ -270,7 +262,6 @@ static void normalize_map(void)
     }
 }
 
-// carga cr.json (GeoJSON de simplemaps) a mano, sin librerias
 int data_load_map(const char *path)
 {
   char *text, *s, *end, saved;
@@ -299,7 +290,6 @@ int data_load_map(const char *path)
         ok = 0;
       else
       {
-        // cortar el string al final del feature para que strstr no se pase al siguiente
         saved = end[1];
         end[1] = '\0';
         ok = parse_feature(s) == 0;
@@ -334,16 +324,12 @@ void data_free_map(void)
   map_capacity = 0;
 }
 
-// ---------- texturas .avs ----------
-
-// mismo formato de la tarea corta: ancho y alto en big-endian, luego ARGB por pixel
 #define SWAP(x) ((((x) << 24) & 0xff000000) | \
                  (((x) << 8) & 0x00ff0000) |  \
                  (((x) >> 8) & 0x0000ff00) |  \
                  (((x) >> 24) & 0x000000ff))
 #define FIX(x) ((x) = SWAP((x)))
 
-// tope para que un archivo danado no pida memoria absurda
 #define AVS_MAX_SIDE 8192
 
 typedef struct
@@ -355,7 +341,6 @@ typedef struct
 
 static TEXTURE textures[PROVINCE_COUNT];
 
-// un archivo por provincia, en el mismo orden que PROVINCES
 static const char *texture_paths[PROVINCE_COUNT] = {
     "assets/sanjose.avs", "assets/alajuela.avs", "assets/cartago.avs",
     "assets/heredia.avs", "assets/guanacaste.avs", "assets/puntarenas.avs",
@@ -371,8 +356,6 @@ static void free_pixels(COLOR **pixels, int w)
   free(pixels);
 }
 
-// basado en cargarImgBuffer() de la tarea corta, pero sin exit() ni prints
-// se guarda como pixels[x][y] con la y hacia arriba, igual que el framebuffer
 static int read_avs(const char *path, TEXTURE *t)
 {
   FILE *f;
@@ -385,7 +368,6 @@ static int read_avs(const char *path, TEXTURE *t)
   if (f == NULL)
     return -1;
 
-  // unsigned para que el SWAP no desborde un int con signo
   if (fread(&uw, sizeof(uw), 1, f) != 1 || fread(&uh, sizeof(uh), 1, f) != 1)
     ok = 0;
   FIX(uw);
@@ -397,7 +379,6 @@ static int read_avs(const char *path, TEXTURE *t)
 
   if (ok)
   {
-    // calloc para que free_pixels no libere basura si algo falla a medio camino
     pixels = (COLOR **)calloc(w, sizeof(COLOR *));
     ok = pixels != NULL;
   }
@@ -407,7 +388,6 @@ static int read_avs(const char *path, TEXTURE *t)
     ok = pixels[i] != NULL;
   }
 
-  // el archivo viene por filas desde arriba
   for (j = 0; ok && j < h; j++)
     for (i = 0; ok && i < w; i++)
     {
@@ -439,7 +419,6 @@ static int read_avs(const char *path, TEXTURE *t)
   return 0;
 }
 
-// si falta un archivo esa provincia queda sin textura y render la pinta con su color
 int data_load_textures(void)
 {
   int i, result = 0;
@@ -472,7 +451,6 @@ void data_free_texture(void)
   texture_w = texture_h = 0;
 }
 
-/* TODO (Persona 3): guardar el framebuffer en un archivo. */
 int data_save_buffer(const char *filename)
 {
   (void)filename;

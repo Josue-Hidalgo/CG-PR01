@@ -319,7 +319,6 @@ static int text_width(const char *text, int scale)
   return len == 0 ? 0 : (len * 6 - 1) * scale;
 }
 
-// (x, y) = esquina inferior izquierda del texto
 static void draw_text(int x, int y, const char *text, int scale)
 {
   const unsigned char *glyph;
@@ -375,7 +374,6 @@ static void layout_panel(void)
   add_button(x, y, half, "+", ACT_ZOOM_IN);
   add_button(x + half + BUTTON_GAP, y, half, "-", ACT_ZOOM_OUT);
 
-  // flechas acomodadas como en el teclado
   add_label(x, y -= 24, "PAN");
   y -= BUTTON_H + 4;
   add_button(x + third + BUTTON_GAP, y, third, "^", ACT_PAN_UP);
