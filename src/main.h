@@ -20,6 +20,8 @@ extern int g_vres;
 #define MIN_SIDE 700
 #define MAX_SIDE 1000
 
+#define REF_POINT_DEFAULT 1  
+
 typedef struct
 {
   double r;

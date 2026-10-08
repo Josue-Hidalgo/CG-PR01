@@ -31,7 +31,8 @@ typedef enum
   ACT_ROTATE_CCW,
   ACT_RESET,
   ACT_EXIT,
-  ACT_COUNT
+  ACT_COUNT,
+  ACT_POINT
 } ACTION;
 
 typedef struct
@@ -109,6 +110,9 @@ static void do_action(ACTION action, double speed)
     break;
   case ACT_EXIT:
     gui_quit();
+    break;
+  case ACT_POINT:
+    ref_point = !ref_point;
     break;
   default:
     return;
@@ -209,6 +213,9 @@ static void keyboard(unsigned char key, int x, int y)
   case 'r':
     do_action(ACT_RESET, speed);
     break;
+  case 'p':
+    do_action(ACT_POINT, speed);
+    break;
   case 27:
     do_action(ACT_EXIT, speed);
     break;
@@ -225,16 +232,16 @@ static void special(int key, int x, int y)
 
   switch (key)
   {
-  case GLUT_KEY_LEFT:
+  case GLUT_KEY_RIGHT:
     do_action(ACT_PAN_LEFT, speed);
     break;
-  case GLUT_KEY_RIGHT:
+  case GLUT_KEY_LEFT:
     do_action(ACT_PAN_RIGHT, speed);
     break;
-  case GLUT_KEY_UP:
+  case GLUT_KEY_DOWN:
     do_action(ACT_PAN_UP, speed);
     break;
-  case GLUT_KEY_DOWN:
+  case GLUT_KEY_UP:
     do_action(ACT_PAN_DOWN, speed);
     break;
   default:
@@ -431,7 +438,8 @@ void gui_draw_panel(void)
       "ESC        TERMINAR",
       "",
       "SHIFT: RAPIDO",
-      "CTRL:  LENTO"};
+      "CTRL:  LENTO",
+      "P:     PUNTO FIJO"};
   int i;
 
   if (panel_pixels == NULL)
