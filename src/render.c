@@ -6,8 +6,9 @@ COLOR **buffer = NULL;
 COLOR current_color = {1.0, 1.0, 1.0};
 DISPLAY_MODES current_mode = MODE_SIMPLE;
 static const COLOR border_color = {0.0, 0.0, 0.0};
-
+int ref_point = REF_POINT_DEFAULT;
 static GLfloat *pixels = NULL;
+
 int render_init(void)
 {
   int i;
@@ -100,7 +101,7 @@ static void draw_map(void)
     DrawPolygon(&map.polygons[i]);
 }
 
-#define CENTER_RADIUS 3
+
 
 // Punto fijo en el centro del area de visualizacion (coordenadas de pantalla).
 static void draw_center_point(void)
@@ -133,7 +134,8 @@ void draw_scene(void)
   {
     draw_map();
   }
-  draw_center_point();   
+  if(ref_point)
+    draw_center_point();   
   present_buffer();
   gui_draw_panel();
   glFlush();

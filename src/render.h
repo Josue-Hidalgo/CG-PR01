@@ -1,5 +1,7 @@
 #ifndef RENDER_H
 #define RENDER_H
+#define CENTER_RADIUS 3
+
 
 #include "main.h"
 #include "data.h"
@@ -7,6 +9,7 @@
 extern COLOR **buffer;
 extern COLOR current_color;
 extern DISPLAY_MODES current_mode;
+extern int ref_point;
 
 typedef struct
 {
