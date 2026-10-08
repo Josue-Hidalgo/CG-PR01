@@ -1,6 +1,7 @@
 #include "data.h"
 #include <string.h>
 #include <ctype.h>
+#include "render.h"
 
 #define MAP_MARGIN 0.03
 
@@ -457,8 +458,44 @@ void data_free_texture(void)
   texture_w = texture_h = 0;
 }
 
+
+// guarda el framebuffer como .avs (mismo formato que read_avs): ancho y alto
+// en big-endian, luego ARGB por pixel, por filas desde arriba
 int data_save_buffer(const char *filename)
 {
-  (void)filename;
-  return 0;
+  FILE *out;
+  unsigned int w = (unsigned int)HRES, h = (unsigned int)VRES;
+  int i, j, r, g, b, ok = 1;
+
+  if (buffer == NULL)
+    return -1;
+
+  out = fopen(filename, "wb");
+  if (out == NULL)
+    return -1;
+
+  w = SWAP(w);
+  h = SWAP(h);
+  if (fwrite(&w, sizeof(w), 1, out) != 1 || fwrite(&h, sizeof(h), 1, out) != 1)
+    ok = 0;
+
+  // la fila 0 del archivo es la de arriba, o sea y = VRES - 1 en el framebuffer
+  for (j = 0; ok && j < VRES; j++)
+    for (i = 0; ok && i < HRES; i++)
+    {
+      r = (int)lround(buffer[i][VRES - 1 - j].r * 255.0);
+      g = (int)lround(buffer[i][VRES - 1 - j].g * 255.0);
+      b = (int)lround(buffer[i][VRES - 1 - j].b * 255.0);
+
+      if (fputc(255, out) == EOF || fputc(r, out) == EOF ||
+          fputc(g, out) == EOF || fputc(b, out) == EOF)
+        ok = 0;
+    }
+
+  if (fclose(out) != 0)
+    ok = 0;
+
+  return ok ? 0 : -1;
 }
+
+
