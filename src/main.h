@@ -68,6 +68,7 @@ typedef enum
   ZOOM_OUT,
   ROTATION,
   RESTART,
+  SCREENSHOT,
   EXIT
 } MENU;
 
