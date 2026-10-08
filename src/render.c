@@ -1,13 +1,12 @@
 #include "render.h"
 #include "geometry.h"
+#include "GUI.h"
 
 COLOR **buffer = NULL;
 COLOR current_color = {1.0, 1.0, 1.0};
 DISPLAY_MODES current_mode = MODE_SIMPLE;
 
-static GLfloat *pixels = NULL; /* copia lineal del buffer para glDrawPixels */
-
-/* ---------- Ciclo de vida ---------- */
+static GLfloat *pixels = NULL;
 
 int render_init(void)
 {
@@ -60,9 +59,6 @@ void render_clear(void)
     }
 }
 
-/* ---------- Pantalla ---------- */
-
-/* Vuelca el framebuffer a la ventana con una sola llamada (mucho mas rapido que GL_POINTS). */
 static void present_buffer(void)
 {
   int x, y, idx;
@@ -106,18 +102,16 @@ static void draw_map(void)
     default:
       break;
     }
-    DrawPolygon(p); /* los bordes siempre van encima */
+    DrawPolygon(p);
   }
 }
 
-/* Callback de GLUT: redibuja TODO el cuadro. */
 void draw_scene(void)
 {
   render_clear();
 
   if (map.count == 0)
   {
-    /* Mapa aun no cargado: linea de prueba para verificar Bresenham.s */
     color_province(&current_color, CARTAGO);
     bresenham(HRES / 4, VRES / 4, 3 * HRES / 4, 3 * VRES / 4);
   }
@@ -127,15 +121,10 @@ void draw_scene(void)
   }
 
   present_buffer();
+  gui_draw_panel();
   glFlush();
 }
 
-/* ---------- Primitivas ---------- */
-
-/*
- * plot(x, y): pinta un pixel en el framebuffer con current_color.
- * Solo escribe en buffer; draw_scene lo muestra al final.
- */
 void plot(int x, int y)
 {
   if (x < 0 || x >= HRES || y < 0 || y >= VRES)
@@ -144,40 +133,50 @@ void plot(int x, int y)
   buffer[x][y] = current_color;
 }
 
-/* Color de cada provincia (usar al inicio de un algoritmo de trazado). */
 void color_province(COLOR *c, PROVINCES province)
 {
   switch (province)
   {
-  case SANJOSE: /* Morado */
-    c->r = 0.5; c->g = 0.0; c->b = 0.5;
+  case SANJOSE: // Morado
+    c->r = 0.5;
+    c->g = 0.0;
+    c->b = 0.5;
     break;
-  case ALAJUELA: /* Rojo */
-    c->r = 1.0; c->g = 0.0; c->b = 0.0;
+  case ALAJUELA: // Rojo
+    c->r = 1.0;
+    c->g = 0.0;
+    c->b = 0.0;
     break;
-  case CARTAGO: /* Azul */
-    c->r = 0.0; c->g = 0.0; c->b = 1.0;
+  case CARTAGO: // Azul
+    c->r = 0.0;
+    c->g = 0.0;
+    c->b = 1.0;
     break;
-  case HEREDIA: /* Amarillo */
-    c->r = 1.0; c->g = 1.0; c->b = 0.0;
+  case HEREDIA: // Amarillo
+    c->r = 1.0;
+    c->g = 1.0;
+    c->b = 0.0;
     break;
-  case GUANACASTE: /* Rosado */
-    c->r = 1.0; c->g = 0.0; c->b = 0.5;
+  case GUANACASTE: //        Rosado
+    c->r = 1.0;
+    c->g = 0.0;
+    c->b = 0.5;
     break;
   case PUNTARENAS: /* Naranja */
-    c->r = 1.0; c->g = 0.5; c->b = 0.0;
+    c->r = 1.0;
+    c->g = 0.5;
+    c->b = 0.0;
     break;
   case LIMON: /* Verde */
-    c->r = 0.0; c->g = 1.0; c->b = 0.0;
+    c->r = 0.0;
+    c->g = 1.0;
+    c->b = 0.0;
     break;
   default:
     break;
   }
 }
 
-/* ---------- Poligonos ---------- */
-
-/* Aplica la camara (geometry) a los vertices y los pasa a pixeles enteros. */
 POINT *polygon_to_screen(const POLYGON *p)
 {
   MAT3 m = geometry_matrix();
@@ -198,7 +197,6 @@ POINT *polygon_to_screen(const POLYGON *p)
   return pts;
 }
 
-/* Bordes: n llamadas a bresenham, cerrando el poligono (ultimo -> primero). */
 void DrawPolygon(const POLYGON *p)
 {
   POINT *pts;
@@ -226,14 +224,224 @@ void DrawPolygon(const POLYGON *p)
   free(pts);
 }
 
-/* TODO (Persona 1): relleno de color solido (scanline / algoritmo visto en clase). */
-void PaintPolygon(const POLYGON *p)
+static int cmp_double(const void *a, const void *b)
 {
-  (void)p;
+  double x = *(const double *)a, y = *(const double *)b;
+  return (x > y) - (x < y);
 }
 
-/* TODO (Persona 1): relleno usando la textura de data.c (texture[][]). */
+static int build_edges(const POINT *pts, int count, EDGE **edges, int *ymin, int *ymax)
+{
+  EDGE *e;
+  POINT a, b, t;
+  int i, n = 0;
+
+  e = (EDGE *)malloc(count * sizeof(EDGE));
+  if (e == NULL)
+    return -1;
+
+  *ymin = *ymax = pts[0].y;
+  for (i = 0; i < count; i++)
+  {
+    if (pts[i].y < *ymin)
+      *ymin = pts[i].y;
+    if (pts[i].y > *ymax)
+      *ymax = pts[i].y;
+
+    a = pts[i];
+    b = pts[(i + 1) % count];
+    if (a.y == b.y)
+      continue;
+    if (a.y < b.y)
+    {
+      t = a;
+      a = b;
+      b = t;
+    }
+    e[n].yhigh = a.y;
+    e[n].ylow = b.y;
+    e[n].xhigh = a.x;
+    e[n].dxdy = (double)(a.x - b.x) / (double)(a.y - b.y);
+    e[n].x = 0.0;
+    e[n].active = 0;
+    n++;
+  }
+
+  *edges = e;
+  return n;
+}
+
+void scanline_fill_color(const POLYGON *p)
+{
+  POINT *pts;
+  EDGE *edges;
+  double *xs;
+  int nedges, ymin, ymax, scanline;
+  int i, k, n, x, x0, x1;
+
+  if (p->count < 3)
+    return;
+
+  pts = polygon_to_screen(p);
+  if (pts == NULL)
+    return;
+
+  nedges = build_edges(pts, p->count, &edges, &ymin, &ymax);
+  free(pts);
+  if (nedges < 0)
+    return;
+
+  xs = (double *)malloc((nedges > 0 ? nedges : 1) * sizeof(double));
+  if (xs == NULL)
+  {
+    free(edges);
+    return;
+  }
+
+  color_province(&current_color, p->province);
+
+  if (ymin < 0)
+    ymin = 0;
+  if (ymax > VRES - 1)
+    ymax = VRES - 1;
+
+  scanline = ymax;
+  while (scanline >= ymin)
+  {
+    for (i = 0; i < nedges; i++)
+      if (!edges[i].active && edges[i].ylow < scanline && scanline <= edges[i].yhigh)
+      {
+        edges[i].active = 1;
+        edges[i].x = edges[i].xhigh + (scanline - edges[i].yhigh) * edges[i].dxdy;
+      }
+
+    n = 0;
+    for (i = 0; i < nedges; i++)
+      if (edges[i].active)
+        xs[n++] = edges[i].x;
+    qsort(xs, n, sizeof(double), cmp_double);
+
+    for (k = 0; k + 1 < n; k += 2)
+    {
+      x0 = (int)lround(xs[k]);
+      x1 = (int)lround(xs[k + 1]);
+      if (x0 < 0)
+        x0 = 0;
+      if (x1 > HRES - 1)
+        x1 = HRES - 1;
+      for (x = x0; x <= x1; x++)
+        plot(x, scanline);
+    }
+
+    for (i = 0; i < nedges; i++)
+      if (edges[i].active)
+        edges[i].x -= edges[i].dxdy;
+
+    for (i = 0; i < nedges; i++)
+      if (edges[i].active && edges[i].ylow >= scanline - 1)
+        edges[i].active = 0;
+
+    scanline--;
+  }
+
+  free(xs);
+  free(edges);
+}
+
+void scanline_fill_texture(const POLYGON *p)
+{
+  POINT *pts;
+  EDGE *edges;
+  double *xs;
+  int nedges, ymin, ymax, scanline;
+  int i, k, n, x, x0, x1, u, v;
+
+  // cada provincia usa su propia textura
+  data_select_texture(p->province);
+  if (texture == NULL || texture_w <= 0 || texture_h <= 0)
+  {
+    scanline_fill_color(p);
+    return;
+  }
+
+  if (p->count < 3)
+    return;
+
+  pts = polygon_to_screen(p);
+  if (pts == NULL)
+    return;
+
+  nedges = build_edges(pts, p->count, &edges, &ymin, &ymax);
+  free(pts);
+  if (nedges < 0)
+    return;
+
+  xs = (double *)malloc((nedges > 0 ? nedges : 1) * sizeof(double));
+  if (xs == NULL)
+  {
+    free(edges);
+    return;
+  }
+
+  if (ymin < 0)
+    ymin = 0;
+  if (ymax > VRES - 1)
+    ymax = VRES - 1;
+
+  scanline = ymax;
+  while (scanline >= ymin)
+  {
+    for (i = 0; i < nedges; i++)
+      if (!edges[i].active && edges[i].ylow < scanline && scanline <= edges[i].yhigh)
+      {
+        edges[i].active = 1;
+        edges[i].x = edges[i].xhigh + (scanline - edges[i].yhigh) * edges[i].dxdy;
+      }
+
+    n = 0;
+    for (i = 0; i < nedges; i++)
+      if (edges[i].active)
+        xs[n++] = edges[i].x;
+    qsort(xs, n, sizeof(double), cmp_double);
+
+    v = scanline % texture_h;
+    for (k = 0; k + 1 < n; k += 2)
+    {
+      x0 = (int)lround(xs[k]);
+      x1 = (int)lround(xs[k + 1]);
+      if (x0 < 0)
+        x0 = 0;
+      if (x1 > HRES - 1)
+        x1 = HRES - 1;
+      for (x = x0; x <= x1; x++)
+      {
+        u = x % texture_w;
+        current_color = texture[u][v];
+        plot(x, scanline);
+      }
+    }
+
+    for (i = 0; i < nedges; i++)
+      if (edges[i].active)
+        edges[i].x -= edges[i].dxdy;
+
+    for (i = 0; i < nedges; i++)
+      if (edges[i].active && edges[i].ylow >= scanline - 1)
+        edges[i].active = 0;
+
+    scanline--;
+  }
+
+  free(xs);
+  free(edges);
+}
+
+void PaintPolygon(const POLYGON *p)
+{
+  scanline_fill_color(p);
+}
+
 void TexturePolygon(const POLYGON *p)
 {
-  (void)p;
+  scanline_fill_texture(p);
 }
