@@ -10,8 +10,8 @@
 #include <time.h>
 #include <errno.h>
 
-#define VRES 768
-#define HRES 768
+#define VRES 700
+#define HRES 700
 
 #define PANEL_W 200
 
