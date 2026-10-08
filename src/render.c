@@ -100,6 +100,26 @@ static void draw_map(void)
     DrawPolygon(&map.polygons[i]);
 }
 
+#define CENTER_RADIUS 3
+
+// Punto fijo en el centro del area de visualizacion (coordenadas de pantalla).
+static void draw_center_point(void)
+{
+  const COLOR fill = {1.0, 1.0, 1.0};
+  int cx = HRES / 2;
+  int cy = VRES / 2;
+  int dx, dy, d2;
+
+  current_color = fill;
+  for (dy = -CENTER_RADIUS; dy <= CENTER_RADIUS; dy++)
+    for (dx = -CENTER_RADIUS; dx <= CENTER_RADIUS; dx++)
+    {
+      d2 = dx * dx + dy * dy;
+      if (d2 <= CENTER_RADIUS * CENTER_RADIUS)
+        plot(cx + dx, cy + dy);
+    }
+}
+
 void draw_scene(void)
 {
   render_clear();
@@ -113,7 +133,7 @@ void draw_scene(void)
   {
     draw_map();
   }
-
+  draw_center_point();   
   present_buffer();
   gui_draw_panel();
   glFlush();
