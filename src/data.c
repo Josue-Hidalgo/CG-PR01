@@ -3,7 +3,6 @@
 #include <ctype.h>
 
 #define MAP_MARGIN 0.03
-#define FIT_MIN_RATIO 0.05
 
 MAP map = {NULL, 0};
 static int map_capacity = 0;
@@ -226,17 +225,18 @@ static void normalize_map(void)
   double xmin, xmax, ymin, ymax, w, h, cx, cy;
   double aspect = (double)HRES / VRES;
   VEC2 *v;
-  int i, j, max_count = 0;
+  int i, j;
+  int largest[PROVINCE_COUNT] = {0};
 
   for (i = 0; i < map.count; i++)
-    if (map.polygons[i].count > max_count)
-      max_count = map.polygons[i].count;
+    if (map.polygons[i].count > largest[map.polygons[i].province])
+      largest[map.polygons[i].province] = map.polygons[i].count;
 
   xmin = ymin = INFINITY;
   xmax = ymax = -INFINITY;
 
   for (i = 0; i < map.count; i++)
-    if (map.polygons[i].count >= max_count * FIT_MIN_RATIO)
+    if (map.polygons[i].count == largest[map.polygons[i].province])
       for (j = 0; j < map.polygons[i].count; j++)
       {
         v = &map.polygons[i].vertices[j];
