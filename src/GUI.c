@@ -7,7 +7,7 @@
 
 #define ZOOM_STEP 1.1
 #define PAN_STEP 20.0
-#define ROTATE_STEP 0.1 
+#define ROTATE_STEP 0.1
 
 #define SPEED_FAST 3.0
 #define SPEED_SLOW (1.0 / 3.0)
@@ -71,20 +71,47 @@ static void do_action(ACTION action, double speed)
 {
   switch (action)
   {
-  case ACT_MODE_SIMPLE: current_mode = MODE_SIMPLE; break;
-  case ACT_MODE_FILL: current_mode = MODE_FILL; break;
-  case ACT_MODE_TEXTURE: current_mode = MODE_TEXTURE; break;
-  case ACT_ZOOM_IN: geometry_zoom(pow(ZOOM_STEP, speed)); break;
-  case ACT_ZOOM_OUT: geometry_zoom(1.0 / pow(ZOOM_STEP, speed)); break;
-  case ACT_PAN_LEFT: geometry_pan(-PAN_STEP * speed, 0); break;
-  case ACT_PAN_RIGHT: geometry_pan(PAN_STEP * speed, 0); break;
-  case ACT_PAN_UP: geometry_pan(0, PAN_STEP * speed); break;
-  case ACT_PAN_DOWN: geometry_pan(0, -PAN_STEP * speed); break;
-  case ACT_ROTATE_CW: geometry_rotate(-ROTATE_STEP * speed); break;
-  case ACT_ROTATE_CCW: geometry_rotate(ROTATE_STEP * speed); break;
-  case ACT_RESET: geometry_reset(); break;
-  case ACT_EXIT: gui_quit(); break;
-  default: return;
+  case ACT_MODE_SIMPLE:
+    current_mode = MODE_SIMPLE;
+    break;
+  case ACT_MODE_FILL:
+    current_mode = MODE_FILL;
+    break;
+  case ACT_MODE_TEXTURE:
+    current_mode = MODE_TEXTURE;
+    break;
+  case ACT_ZOOM_IN:
+    geometry_zoom(pow(ZOOM_STEP, speed));
+    break;
+  case ACT_ZOOM_OUT:
+    geometry_zoom(1.0 / pow(ZOOM_STEP, speed));
+    break;
+  case ACT_PAN_LEFT:
+    geometry_pan(-PAN_STEP * speed, 0);
+    break;
+  case ACT_PAN_RIGHT:
+    geometry_pan(PAN_STEP * speed, 0);
+    break;
+  case ACT_PAN_UP:
+    geometry_pan(0, PAN_STEP * speed);
+    break;
+  case ACT_PAN_DOWN:
+    geometry_pan(0, -PAN_STEP * speed);
+    break;
+  case ACT_ROTATE_CW:
+    geometry_rotate(-ROTATE_STEP * speed);
+    break;
+  case ACT_ROTATE_CCW:
+    geometry_rotate(ROTATE_STEP * speed);
+    break;
+  case ACT_RESET:
+    geometry_reset();
+    break;
+  case ACT_EXIT:
+    gui_quit();
+    break;
+  default:
+    return;
   }
   glutPostRedisplay();
 }
@@ -93,7 +120,7 @@ void gui_quit(void)
 {
   free(panel_pixels);
   panel_pixels = NULL;
-  exit(EXIT_SUCCESS); 
+  exit(EXIT_SUCCESS);
 }
 
 static void menu_option(int option)
@@ -104,11 +131,21 @@ static void menu_option(int option)
     current_mode = (DISPLAY_MODES)((current_mode + 1) % MODE_COUNT);
     glutPostRedisplay();
     break;
-  case ZOOM_IN: do_action(ACT_ZOOM_IN, 1.0); break;
-  case ZOOM_OUT: do_action(ACT_ZOOM_OUT, 1.0); break;
-  case ROTATION: do_action(ACT_ROTATE_CCW, 1.0); break;
-  case RESTART: do_action(ACT_RESET, 1.0); break;
-  case EXIT: do_action(ACT_EXIT, 1.0); break;
+  case ZOOM_IN:
+    do_action(ACT_ZOOM_IN, 1.0);
+    break;
+  case ZOOM_OUT:
+    do_action(ACT_ZOOM_OUT, 1.0);
+    break;
+  case ROTATION:
+    do_action(ACT_ROTATE_CCW, 1.0);
+    break;
+  case RESTART:
+    do_action(ACT_RESET, 1.0);
+    break;
+  case EXIT:
+    do_action(ACT_EXIT, 1.0);
+    break;
   }
 }
 
@@ -138,19 +175,40 @@ static void keyboard(unsigned char key, int x, int y)
 
   switch (key)
   {
-  case '1': do_action(ACT_MODE_SIMPLE, speed); break;
-  case '2': do_action(ACT_MODE_FILL, speed); break;
-  case '3': do_action(ACT_MODE_TEXTURE, speed); break;
-  case 'm': menu_option(DISPLAY_MODE); break;
+  case '1':
+    do_action(ACT_MODE_SIMPLE, speed);
+    break;
+  case '2':
+    do_action(ACT_MODE_FILL, speed);
+    break;
+  case '3':
+    do_action(ACT_MODE_TEXTURE, speed);
+    break;
+  case 'm':
+    menu_option(DISPLAY_MODE);
+    break;
   case '+':
-  case '=': do_action(ACT_ZOOM_IN, speed); break;
+  case '=':
+    do_action(ACT_ZOOM_IN, speed);
+    break;
   case '-':
-  case '_': do_action(ACT_ZOOM_OUT, speed); break;
-  case 'e': do_action(ACT_ROTATE_CW, speed); break;
-  case 'q': do_action(ACT_ROTATE_CCW, speed); break;
-  case 'r': do_action(ACT_RESET, speed); break;
-  case 27: do_action(ACT_EXIT, speed); break;
-  default: break;
+  case '_':
+    do_action(ACT_ZOOM_OUT, speed);
+    break;
+  case 'e':
+    do_action(ACT_ROTATE_CW, speed);
+    break;
+  case 'q':
+    do_action(ACT_ROTATE_CCW, speed);
+    break;
+  case 'r':
+    do_action(ACT_RESET, speed);
+    break;
+  case 27:
+    do_action(ACT_EXIT, speed);
+    break;
+  default:
+    break;
   }
 }
 
@@ -162,11 +220,20 @@ static void special(int key, int x, int y)
 
   switch (key)
   {
-  case GLUT_KEY_LEFT: do_action(ACT_PAN_LEFT, speed); break;
-  case GLUT_KEY_RIGHT: do_action(ACT_PAN_RIGHT, speed); break;
-  case GLUT_KEY_UP: do_action(ACT_PAN_UP, speed); break;
-  case GLUT_KEY_DOWN: do_action(ACT_PAN_DOWN, speed); break;
-  default: break;
+  case GLUT_KEY_LEFT:
+    do_action(ACT_PAN_LEFT, speed);
+    break;
+  case GLUT_KEY_RIGHT:
+    do_action(ACT_PAN_RIGHT, speed);
+    break;
+  case GLUT_KEY_UP:
+    do_action(ACT_PAN_UP, speed);
+    break;
+  case GLUT_KEY_DOWN:
+    do_action(ACT_PAN_DOWN, speed);
+    break;
+  default:
+    break;
   }
 }
 

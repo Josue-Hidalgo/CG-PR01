@@ -3,8 +3,8 @@
 
 #include "main.h"
 
-void gui_init(void); 
-void gui_quit(void); 
+void gui_init(void);
+void gui_quit(void);
 
 void gui_draw_panel(void);
 

@@ -6,7 +6,7 @@ COLOR **buffer = NULL;
 COLOR current_color = {1.0, 1.0, 1.0};
 DISPLAY_MODES current_mode = MODE_SIMPLE;
 
-static GLfloat *pixels = NULL; 
+static GLfloat *pixels = NULL;
 
 int render_init(void)
 {
@@ -138,25 +138,39 @@ void color_province(COLOR *c, PROVINCES province)
   switch (province)
   {
   case SANJOSE: // Morado
-    c->r = 0.5; c->g = 0.0; c->b = 0.5;
+    c->r = 0.5;
+    c->g = 0.0;
+    c->b = 0.5;
     break;
   case ALAJUELA: // Rojo
-    c->r = 1.0; c->g = 0.0; c->b = 0.0;
+    c->r = 1.0;
+    c->g = 0.0;
+    c->b = 0.0;
     break;
-  case CARTAGO: // Azul 
-    c->r = 0.0; c->g = 0.0; c->b = 1.0;
+  case CARTAGO: // Azul
+    c->r = 0.0;
+    c->g = 0.0;
+    c->b = 1.0;
     break;
-  case HEREDIA: // Amarillo 
-    c->r = 1.0; c->g = 1.0; c->b = 0.0;
+  case HEREDIA: // Amarillo
+    c->r = 1.0;
+    c->g = 1.0;
+    c->b = 0.0;
     break;
   case GUANACASTE: //        Rosado
-    c->r = 1.0; c->g = 0.0; c->b = 0.5;
+    c->r = 1.0;
+    c->g = 0.0;
+    c->b = 0.5;
     break;
   case PUNTARENAS: /* Naranja */
-    c->r = 1.0; c->g = 0.5; c->b = 0.0;
+    c->r = 1.0;
+    c->g = 0.5;
+    c->b = 0.0;
     break;
   case LIMON: /* Verde */
-    c->r = 0.0; c->g = 1.0; c->b = 0.0;
+    c->r = 0.0;
+    c->g = 1.0;
+    c->b = 0.0;
     break;
   default:
     break;
@@ -229,8 +243,10 @@ static int build_edges(const POINT *pts, int count, EDGE **edges, int *ymin, int
   *ymin = *ymax = pts[0].y;
   for (i = 0; i < count; i++)
   {
-    if (pts[i].y < *ymin) *ymin = pts[i].y;
-    if (pts[i].y > *ymax) *ymax = pts[i].y;
+    if (pts[i].y < *ymin)
+      *ymin = pts[i].y;
+    if (pts[i].y > *ymax)
+      *ymax = pts[i].y;
 
     a = pts[i];
     b = pts[(i + 1) % count];
@@ -238,7 +254,9 @@ static int build_edges(const POINT *pts, int count, EDGE **edges, int *ymin, int
       continue;
     if (a.y < b.y)
     {
-      t = a; a = b; b = t; 
+      t = a;
+      a = b;
+      b = t;
     }
     e[n].yhigh = a.y;
     e[n].ylow = b.y;
@@ -282,8 +300,10 @@ void scanline_fill_color(const POLYGON *p)
 
   color_province(&current_color, p->province);
 
-  if (ymin < 0) ymin = 0;
-  if (ymax > VRES - 1) ymax = VRES - 1;
+  if (ymin < 0)
+    ymin = 0;
+  if (ymax > VRES - 1)
+    ymax = VRES - 1;
 
   scanline = ymax;
   while (scanline >= ymin)
@@ -305,8 +325,10 @@ void scanline_fill_color(const POLYGON *p)
     {
       x0 = (int)lround(xs[k]);
       x1 = (int)lround(xs[k + 1]);
-      if (x0 < 0) x0 = 0;
-      if (x1 > HRES - 1) x1 = HRES - 1;
+      if (x0 < 0)
+        x0 = 0;
+      if (x1 > HRES - 1)
+        x1 = HRES - 1;
       for (x = x0; x <= x1; x++)
         plot(x, scanline);
     }
@@ -361,8 +383,10 @@ void scanline_fill_texture(const POLYGON *p)
     return;
   }
 
-  if (ymin < 0) ymin = 0;
-  if (ymax > VRES - 1) ymax = VRES - 1;
+  if (ymin < 0)
+    ymin = 0;
+  if (ymax > VRES - 1)
+    ymax = VRES - 1;
 
   scanline = ymax;
   while (scanline >= ymin)
@@ -380,13 +404,15 @@ void scanline_fill_texture(const POLYGON *p)
         xs[n++] = edges[i].x;
     qsort(xs, n, sizeof(double), cmp_double);
 
-    v = scanline % texture_h; 
+    v = scanline % texture_h;
     for (k = 0; k + 1 < n; k += 2)
     {
       x0 = (int)lround(xs[k]);
       x1 = (int)lround(xs[k + 1]);
-      if (x0 < 0) x0 = 0;
-      if (x1 > HRES - 1) x1 = HRES - 1;
+      if (x0 < 0)
+        x0 = 0;
+      if (x1 > HRES - 1)
+        x1 = HRES - 1;
       for (x = x0; x <= x1; x++)
       {
         u = x % texture_w;

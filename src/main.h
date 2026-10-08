@@ -48,8 +48,8 @@ typedef enum
 
 typedef enum
 {
-  MODE_SIMPLE, 
-  MODE_FILL,   
+  MODE_SIMPLE,
+  MODE_FILL,
   MODE_TEXTURE,
   MODE_COUNT
 } DISPLAY_MODES;
