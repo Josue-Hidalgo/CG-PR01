@@ -87,23 +87,17 @@ static void draw_map(void)
 {
   int i;
 
-  for (i = 0; i < map.count; i++)
-  {
-    const POLYGON *p = &map.polygons[i];
-
-    switch (current_mode)
+  if (current_mode != MODE_SIMPLE)
+    for (i = 0; i < map.count; i++)
     {
-    case MODE_FILL:
-      PaintPolygon(p);
-      break;
-    case MODE_TEXTURE:
-      TexturePolygon(p);
-      break;
-    default:
-      break;
-    }
-    DrawPolygon(p);
-  }
+      if (current_mode == MODE_FILL)
+        PaintPolygon(&map.polygons[i]);
+      else
+        TexturePolygon(&map.polygons[i]);
+      }
+
+  for (i = 0; i < map.count; i++)
+    DrawPolygon(&map.polygons[i]);
 }
 
 void draw_scene(void)
@@ -210,13 +204,24 @@ void DrawPolygon(const POLYGON *p)
   if (pts == NULL)
     return;
 
-  color_province(&current_color, p->province);
+  if (current_mode == MODE_SIMPLE)  
+    color_province(&current_color, p->province);
+  else
+    current_color.r = current_color.g = current_color.b = 0.0;
 
   for (i = 0; i < p->count; i++)
   {
     next = (i + 1) % p->count;
     a = pts[i];
     b = pts[next];
+
+    if (a.x > b.x || (a.x == b.x && a.y > b.y))
+    {
+      POINT t = a;
+      a = b;
+      b = t;
+    }
+    
     if (geometry_clip_line(&a, &b))
       bresenham(a.x, a.y, b.x, b.y);
   }
