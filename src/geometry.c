@@ -62,11 +62,19 @@ void geometry_reset(void)
 
 void geometry_zoom(double factor)
 {
+  double old_scale = camera.scale;
+  double ratio;
+
   camera.scale *= factor;
   if (camera.scale < SCALE_MIN)
     camera.scale = SCALE_MIN;
   if (camera.scale > SCALE_MAX)
     camera.scale = SCALE_MAX;
+
+  //El error estaba aqui, se calculaba mal el ratio
+  ratio = camera.scale / old_scale;
+  camera.tx *= ratio;
+  camera.ty *= ratio;
 }
 
 void geometry_pan(double dx, double dy)
@@ -82,12 +90,11 @@ void geometry_rotate(double rad)
 
 MAT3 geometry_matrix(void)
 {
-  double cx = HRES / 2.0;
+  double cx = HRES / 2.0;   
   double cy = VRES / 2.0;
   MAT3 m = mat3_translate(-cx, -cy);
-
-  m = mat3_multiply(mat3_scale(camera.scale, camera.scale), m);
   m = mat3_multiply(mat3_rotate(camera.angle), m);
+  m = mat3_multiply(mat3_scale(camera.scale, camera.scale), m);
   m = mat3_multiply(mat3_translate(cx + camera.tx, cy + camera.ty), m);
   return m;
 }
