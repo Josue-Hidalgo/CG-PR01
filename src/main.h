@@ -10,10 +10,15 @@
 #include <time.h>
 #include <errno.h>
 
-#define VRES 700
-#define HRES 700
+extern int g_hres;
+extern int g_vres;
+#define HRES g_hres
+#define VRES g_vres
 
 #define PANEL_W 200
+
+#define MIN_SIDE 700
+#define MAX_SIDE 1000
 
 typedef struct
 {

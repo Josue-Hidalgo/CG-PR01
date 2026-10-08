@@ -35,6 +35,8 @@ VEC2 geometry_apply(MAT3 m, VEC2 p);
 
 int geometry_clip_line(POINT *a, POINT *b);
 
+int geometry_clip_polygon(const VEC2 *in, int n, VEC2 **out);
+
 enum
 {
   CS_INSIDE = 0,

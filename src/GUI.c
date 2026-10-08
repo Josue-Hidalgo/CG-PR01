@@ -169,8 +169,13 @@ static void keyboard(unsigned char key, int x, int y)
   (void)x;
   (void)y;
 
-  if ((glutGetModifiers() & GLUT_ACTIVE_CTRL) && key >= 1 && key <= 26)
-    key = key + 'a' - 1;
+  if (glutGetModifiers() & GLUT_ACTIVE_CTRL)
+  {
+    if (key >= 1 && key <= 26)
+      key = key + 'a' - 1;
+    else if (key == 31)
+      key = '-';
+  }
   key = (unsigned char)tolower(key);
 
   switch (key)
