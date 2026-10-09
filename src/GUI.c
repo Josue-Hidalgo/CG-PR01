@@ -1,9 +1,12 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include "GUI.h"
 #include "render.h"
 #include "geometry.h"
 #include "data.h"
 #include <string.h>
 #include <ctype.h>
+#include <time.h> 
 
 #define ZOOM_STEP 1.1
 #define PAN_STEP 20.0
@@ -31,7 +34,9 @@ typedef enum
   ACT_ROTATE_CCW,
   ACT_RESET,
   ACT_EXIT,
-  ACT_COUNT
+  ACT_POINT,
+  ACT_SCREENSHOT,
+  ACT_COUNT,
 } ACTION;
 
 typedef struct
@@ -65,6 +70,23 @@ static double current_speed(void)
   if (mods & GLUT_ACTIVE_SHIFT)
     return SPEED_FAST;
   return 1.0;
+}
+
+static void save_screenshot(void)
+{
+  struct timespec ts;
+  char filename[64];
+  long long ms;
+
+  clock_gettime(CLOCK_REALTIME, &ts);
+  ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000L;
+
+  snprintf(filename, sizeof filename, "screenshot-%lld.avs", ms);
+
+  if (data_save_buffer(filename) != 0)
+    fprintf(stderr, "Aviso: no se pudo guardar %s\n", filename);
+  else
+    fprintf(stderr, "Guardado en %s\n", filename);
 }
 
 static void do_action(ACTION action, double speed)
@@ -110,6 +132,12 @@ static void do_action(ACTION action, double speed)
   case ACT_EXIT:
     gui_quit();
     break;
+  case ACT_POINT:
+    ref_point = !ref_point;
+    break;
+  case ACT_SCREENSHOT:
+    save_screenshot();
+    break;
   default:
     return;
   }
@@ -143,6 +171,9 @@ static void menu_option(int option)
   case RESTART:
     do_action(ACT_RESET, 1.0);
     break;
+  case SCREENSHOT:
+    do_action(ACT_SCREENSHOT, 1.0);
+    break;
   case EXIT:
     do_action(ACT_EXIT, 1.0);
     break;
@@ -159,6 +190,7 @@ static void create_menu(void)
   glutAddMenuEntry("Rotacion", ROTATION);
   glutAddMenuEntry("Reiniciar", RESTART);
   glutAddMenuEntry("Salir", EXIT);
+  glutAddMenuEntry("Captura de pantalla", SCREENSHOT);
 
   glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
@@ -169,8 +201,13 @@ static void keyboard(unsigned char key, int x, int y)
   (void)x;
   (void)y;
 
-  if ((glutGetModifiers() & GLUT_ACTIVE_CTRL) && key >= 1 && key <= 26)
-    key = key + 'a' - 1;
+  if (glutGetModifiers() & GLUT_ACTIVE_CTRL)
+  {
+    if (key >= 1 && key <= 26)
+      key = key + 'a' - 1;
+    else if (key == 31)
+      key = '-';
+  }
   key = (unsigned char)tolower(key);
 
   switch (key)
@@ -204,6 +241,12 @@ static void keyboard(unsigned char key, int x, int y)
   case 'r':
     do_action(ACT_RESET, speed);
     break;
+  case 'p':
+    do_action(ACT_POINT, speed);
+    break;
+  case 's':
+    do_action(ACT_SCREENSHOT, speed);
+    break;
   case 27:
     do_action(ACT_EXIT, speed);
     break;
@@ -220,16 +263,16 @@ static void special(int key, int x, int y)
 
   switch (key)
   {
-  case GLUT_KEY_LEFT:
+  case GLUT_KEY_RIGHT:
     do_action(ACT_PAN_LEFT, speed);
     break;
-  case GLUT_KEY_RIGHT:
+  case GLUT_KEY_LEFT:
     do_action(ACT_PAN_RIGHT, speed);
     break;
-  case GLUT_KEY_UP:
+  case GLUT_KEY_DOWN:
     do_action(ACT_PAN_UP, speed);
     break;
-  case GLUT_KEY_DOWN:
+  case GLUT_KEY_UP:
     do_action(ACT_PAN_DOWN, speed);
     break;
   default:
@@ -319,7 +362,6 @@ static int text_width(const char *text, int scale)
   return len == 0 ? 0 : (len * 6 - 1) * scale;
 }
 
-// (x, y) = esquina inferior izquierda del texto
 static void draw_text(int x, int y, const char *text, int scale)
 {
   const unsigned char *glyph;
@@ -375,7 +417,6 @@ static void layout_panel(void)
   add_button(x, y, half, "+", ACT_ZOOM_IN);
   add_button(x + half + BUTTON_GAP, y, half, "-", ACT_ZOOM_OUT);
 
-  // flechas acomodadas como en el teclado
   add_label(x, y -= 24, "PAN");
   y -= BUTTON_H + 4;
   add_button(x + third + BUTTON_GAP, y, third, "^", ACT_PAN_UP);
@@ -390,6 +431,7 @@ static void layout_panel(void)
 
   y -= 16;
   add_button(x, y -= BUTTON_H, w, "REINICIAR", ACT_RESET);
+  add_button(x, y -= BUTTON_H + BUTTON_GAP, w, "GUARDAR", ACT_SCREENSHOT);
   add_button(x, y -= BUTTON_H + BUTTON_GAP, w, "TERMINAR", ACT_EXIT);
 
   help_y = y - 24;
@@ -424,6 +466,8 @@ void gui_draw_panel(void)
       "+ -        ZOOM",
       "FLECHAS    PAN",
       "Q E        ROTAR",
+      "P:     PUNTO FIJO",
+      "S          CAPTURA",
       "R          REINICIAR",
       "ESC        TERMINAR",
       "",

@@ -35,5 +35,4 @@ int data_load_textures(void);
 void data_select_texture(PROVINCES province);
 void data_free_texture(void);
 int data_save_buffer(const char *filename);
-
 #endif /* DATA_H */

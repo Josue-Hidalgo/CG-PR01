@@ -1,6 +1,7 @@
 #include "data.h"
 #include <string.h>
 #include <ctype.h>
+#include "render.h"
 
 #define MAP_MARGIN 0.03
 
@@ -157,21 +158,18 @@ static int parse_coordinates(const char *s, int ring_depth, PROVINCES province)
         count = 0;
       else if (depth == ring_depth + 1 && ring == 0)
       {
-        // punto: [longitud, latitud]
         lon = strtod(s + 1, &end);
         while (isspace((unsigned char)*end) || *end == ',')
           end++;
         lat = strtod(end, &end);
         while (isspace((unsigned char)*end))
           end++;
-        // si no llega al ']' el punto venia mal formado..
         if (*end != ']')
           ok = 0;
 
         if (ok && count == capacity)
         {
           capacity = capacity == 0 ? 256 : capacity * 2;
-          // no perder el puntero original si realloc falla !!
           tmp = (VEC2 *)realloc(v, capacity * sizeof(VEC2));
           if (tmp == NULL)
             ok = 0;
@@ -183,7 +181,6 @@ static int parse_coordinates(const char *s, int ring_depth, PROVINCES province)
           v[count].x = lon;
           v[count].y = lat;
           count++;
-          // seguir justo despues de los numeros, el s++ del ciclo avanza uno mas
           s = end - 1;
         }
       }
@@ -207,7 +204,6 @@ static int parse_coordinates(const char *s, int ring_depth, PROVINCES province)
   return ok ? 0 : -1;
 }
 
-// un feature = una provincia con sus poligonos
 static int parse_feature(const char *feature)
 {
   PROVINCES province;
@@ -225,28 +221,31 @@ static int parse_feature(const char *feature)
   return parse_coordinates(coords, ring_depth, province);
 }
 
-// ventana -> viewport: la ventana (en grados) cubre todo el mapa y se agranda en un eje
-// para tener la proporcion del framebuffer, asi no se deforma
-// latitud y framebuffer crecen hacia arriba, no hay que invertir la y :)
 static void normalize_map(void)
 {
   double xmin, xmax, ymin, ymax, w, h, cx, cy;
   double aspect = (double)HRES / VRES;
   VEC2 *v;
   int i, j;
-
-  xmin = xmax = map.polygons[0].vertices[0].x;
-  ymin = ymax = map.polygons[0].vertices[0].y;
+  int largest[PROVINCE_COUNT] = {0};
 
   for (i = 0; i < map.count; i++)
-    for (j = 0; j < map.polygons[i].count; j++)
-    {
-      v = &map.polygons[i].vertices[j];
-      xmin = fmin(xmin, v->x);
-      xmax = fmax(xmax, v->x);
-      ymin = fmin(ymin, v->y);
-      ymax = fmax(ymax, v->y);
-    }
+    if (map.polygons[i].count > largest[map.polygons[i].province])
+      largest[map.polygons[i].province] = map.polygons[i].count;
+
+  xmin = ymin = INFINITY;
+  xmax = ymax = -INFINITY;
+
+  for (i = 0; i < map.count; i++)
+    if (map.polygons[i].count == largest[map.polygons[i].province])
+      for (j = 0; j < map.polygons[i].count; j++)
+      {
+        v = &map.polygons[i].vertices[j];
+        xmin = fmin(xmin, v->x);
+        xmax = fmax(xmax, v->x);
+        ymin = fmin(ymin, v->y);
+        ymax = fmax(ymax, v->y);
+      }
 
   cx = (xmin + xmax) / 2.0;
   cy = (ymin + ymax) / 2.0;
@@ -270,7 +269,6 @@ static void normalize_map(void)
     }
 }
 
-// carga cr.json (GeoJSON de simplemaps) a mano, sin librerias
 int data_load_map(const char *path)
 {
   char *text, *s, *end, saved;
@@ -299,7 +297,6 @@ int data_load_map(const char *path)
         ok = 0;
       else
       {
-        // cortar el string al final del feature para que strstr no se pase al siguiente
         saved = end[1];
         end[1] = '\0';
         ok = parse_feature(s) == 0;
@@ -334,16 +331,12 @@ void data_free_map(void)
   map_capacity = 0;
 }
 
-// ---------- texturas .avs ----------
-
-// mismo formato de la tarea corta: ancho y alto en big-endian, luego ARGB por pixel
 #define SWAP(x) ((((x) << 24) & 0xff000000) | \
                  (((x) << 8) & 0x00ff0000) |  \
                  (((x) >> 8) & 0x0000ff00) |  \
                  (((x) >> 24) & 0x000000ff))
 #define FIX(x) ((x) = SWAP((x)))
 
-// tope para que un archivo danado no pida memoria absurda
 #define AVS_MAX_SIDE 8192
 
 typedef struct
@@ -355,7 +348,6 @@ typedef struct
 
 static TEXTURE textures[PROVINCE_COUNT];
 
-// un archivo por provincia, en el mismo orden que PROVINCES
 static const char *texture_paths[PROVINCE_COUNT] = {
     "assets/sanjose.avs", "assets/alajuela.avs", "assets/cartago.avs",
     "assets/heredia.avs", "assets/guanacaste.avs", "assets/puntarenas.avs",
@@ -371,8 +363,6 @@ static void free_pixels(COLOR **pixels, int w)
   free(pixels);
 }
 
-// basado en cargarImgBuffer() de la tarea corta, pero sin exit() ni prints
-// se guarda como pixels[x][y] con la y hacia arriba, igual que el framebuffer
 static int read_avs(const char *path, TEXTURE *t)
 {
   FILE *f;
@@ -385,7 +375,6 @@ static int read_avs(const char *path, TEXTURE *t)
   if (f == NULL)
     return -1;
 
-  // unsigned para que el SWAP no desborde un int con signo
   if (fread(&uw, sizeof(uw), 1, f) != 1 || fread(&uh, sizeof(uh), 1, f) != 1)
     ok = 0;
   FIX(uw);
@@ -397,7 +386,6 @@ static int read_avs(const char *path, TEXTURE *t)
 
   if (ok)
   {
-    // calloc para que free_pixels no libere basura si algo falla a medio camino
     pixels = (COLOR **)calloc(w, sizeof(COLOR *));
     ok = pixels != NULL;
   }
@@ -407,7 +395,6 @@ static int read_avs(const char *path, TEXTURE *t)
     ok = pixels[i] != NULL;
   }
 
-  // el archivo viene por filas desde arriba
   for (j = 0; ok && j < h; j++)
     for (i = 0; ok && i < w; i++)
     {
@@ -439,7 +426,6 @@ static int read_avs(const char *path, TEXTURE *t)
   return 0;
 }
 
-// si falta un archivo esa provincia queda sin textura y render la pinta con su color
 int data_load_textures(void)
 {
   int i, result = 0;
@@ -472,9 +458,44 @@ void data_free_texture(void)
   texture_w = texture_h = 0;
 }
 
-/* TODO (Persona 3): guardar el framebuffer en un archivo. */
+
+// guarda el framebuffer como .avs (mismo formato que read_avs): ancho y alto
+// en big-endian, luego ARGB por pixel, por filas desde arriba
 int data_save_buffer(const char *filename)
 {
-  (void)filename;
-  return 0;
+  FILE *out;
+  unsigned int w = (unsigned int)HRES, h = (unsigned int)VRES;
+  int i, j, r, g, b, ok = 1;
+
+  if (buffer == NULL)
+    return -1;
+
+  out = fopen(filename, "wb");
+  if (out == NULL)
+    return -1;
+
+  w = SWAP(w);
+  h = SWAP(h);
+  if (fwrite(&w, sizeof(w), 1, out) != 1 || fwrite(&h, sizeof(h), 1, out) != 1)
+    ok = 0;
+
+  // la fila 0 del archivo es la de arriba, o sea y = VRES - 1 en el framebuffer
+  for (j = 0; ok && j < VRES; j++)
+    for (i = 0; ok && i < HRES; i++)
+    {
+      r = (int)lround(buffer[i][VRES - 1 - j].r * 255.0);
+      g = (int)lround(buffer[i][VRES - 1 - j].g * 255.0);
+      b = (int)lround(buffer[i][VRES - 1 - j].b * 255.0);
+
+      if (fputc(255, out) == EOF || fputc(r, out) == EOF ||
+          fputc(g, out) == EOF || fputc(b, out) == EOF)
+        ok = 0;
+    }
+
+  if (fclose(out) != 0)
+    ok = 0;
+
+  return ok ? 0 : -1;
 }
+
+

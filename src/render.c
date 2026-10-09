@@ -5,7 +5,8 @@
 COLOR **buffer = NULL;
 COLOR current_color = {1.0, 1.0, 1.0};
 DISPLAY_MODES current_mode = MODE_SIMPLE;
-
+static const COLOR border_color = {0.0, 0.0, 0.0};
+int ref_point = REF_POINT_DEFAULT;
 static GLfloat *pixels = NULL;
 
 int render_init(void)
@@ -87,23 +88,37 @@ static void draw_map(void)
 {
   int i;
 
-  for (i = 0; i < map.count; i++)
-  {
-    const POLYGON *p = &map.polygons[i];
-
-    switch (current_mode)
+  if (current_mode != MODE_SIMPLE)
+    for (i = 0; i < map.count; i++)
     {
-    case MODE_FILL:
-      PaintPolygon(p);
-      break;
-    case MODE_TEXTURE:
-      TexturePolygon(p);
-      break;
-    default:
-      break;
+      if (current_mode == MODE_FILL)
+        PaintPolygon(&map.polygons[i]);
+      else
+        TexturePolygon(&map.polygons[i]);
     }
-    DrawPolygon(p);
-  }
+
+  for (i = 0; i < map.count; i++)
+    DrawPolygon(&map.polygons[i]);
+}
+
+
+
+// Punto fijo en el centro del area de visualizacion (coordenadas de pantalla).
+static void draw_center_point(void)
+{
+  const COLOR fill = {1.0, 1.0, 1.0};
+  int cx = HRES / 2;
+  int cy = VRES / 2;
+  int dx, dy, d2;
+
+  current_color = fill;
+  for (dy = -CENTER_RADIUS; dy <= CENTER_RADIUS; dy++)
+    for (dx = -CENTER_RADIUS; dx <= CENTER_RADIUS; dx++)
+    {
+      d2 = dx * dx + dy * dy;
+      if (d2 <= CENTER_RADIUS * CENTER_RADIUS)
+        plot(cx + dx, cy + dy);
+    }
 }
 
 void draw_scene(void)
@@ -119,7 +134,8 @@ void draw_scene(void)
   {
     draw_map();
   }
-
+  if(ref_point)
+    draw_center_point();   
   present_buffer();
   gui_draw_panel();
   glFlush();
@@ -137,37 +153,37 @@ void color_province(COLOR *c, PROVINCES province)
 {
   switch (province)
   {
-  case SANJOSE: // Morado
+  case SANJOSE:
     c->r = 0.5;
     c->g = 0.0;
     c->b = 0.5;
     break;
-  case ALAJUELA: // Rojo
+  case ALAJUELA:
     c->r = 1.0;
     c->g = 0.0;
     c->b = 0.0;
     break;
-  case CARTAGO: // Azul
+  case CARTAGO:
     c->r = 0.0;
     c->g = 0.0;
     c->b = 1.0;
     break;
-  case HEREDIA: // Amarillo
+  case HEREDIA:
     c->r = 1.0;
     c->g = 1.0;
     c->b = 0.0;
     break;
-  case GUANACASTE: //        Rosado
+  case GUANACASTE:
     c->r = 1.0;
     c->g = 0.0;
     c->b = 0.5;
     break;
-  case PUNTARENAS: /* Naranja */
+  case PUNTARENAS:
     c->r = 1.0;
     c->g = 0.5;
     c->b = 0.0;
     break;
-  case LIMON: /* Verde */
+  case LIMON:
     c->r = 0.0;
     c->g = 1.0;
     c->b = 0.0;
@@ -196,12 +212,25 @@ POINT *polygon_to_screen(const POLYGON *p)
   }
   return pts;
 }
+static void draw_segment(POINT a, POINT b)
+{
+  POINT t;
+
+  if (a.x > b.x || (a.x == b.x && a.y > b.y))
+  {
+    t = a;
+    a = b;
+    b = t;
+  }
+
+  if (geometry_clip_line(&a, &b))
+    bresenham(a.x, a.y, b.x, b.y);
+}
 
 void DrawPolygon(const POLYGON *p)
 {
   POINT *pts;
-  POINT a, b;
-  int i, next;
+  int i;
 
   if (p->count < 2)
     return;
@@ -210,24 +239,61 @@ void DrawPolygon(const POLYGON *p)
   if (pts == NULL)
     return;
 
-  color_province(&current_color, p->province);
+  if (current_mode == MODE_SIMPLE)
+    color_province(&current_color, p->province);
+  else
+    current_color = border_color;
 
   for (i = 0; i < p->count; i++)
-  {
-    next = (i + 1) % p->count;
-    a = pts[i];
-    b = pts[next];
-    if (geometry_clip_line(&a, &b))
-      bresenham(a.x, a.y, b.x, b.y);
-  }
+    draw_segment(pts[i], pts[(i + 1) % p->count]);
 
   free(pts);
 }
+
+/* ---------- Poligonos: relleno ---------- */
 
 static int cmp_double(const void *a, const void *b)
 {
   double x = *(const double *)a, y = *(const double *)b;
   return (x > y) - (x < y);
+}
+
+// camara + recorte Sutherland-Hodgman contra la ventana + redondeo a pixeles
+static POINT *polygon_to_clipped_screen(const POLYGON *p, int *count)
+{
+  MAT3 m = geometry_matrix();
+  VEC2 *v, *clipped;
+  POINT *pts;
+  int i, n;
+
+  *count = 0;
+
+  v = (VEC2 *)malloc(p->count * sizeof(VEC2));
+  if (v == NULL)
+    return NULL;
+  for (i = 0; i < p->count; i++)
+    v[i] = geometry_apply(m, p->vertices[i]);
+
+  n = geometry_clip_polygon(v, p->count, &clipped);
+  free(v);
+  if (n < 3)
+  {
+    free(clipped);
+    return NULL;
+  }
+
+  pts = (POINT *)malloc(n * sizeof(POINT));
+  if (pts != NULL)
+  {
+    for (i = 0; i < n; i++)
+    {
+      pts[i].x = (int)lround(clipped[i].x);
+      pts[i].y = (int)lround(clipped[i].y);
+    }
+    *count = n;
+  }
+  free(clipped);
+  return pts;
 }
 
 static int build_edges(const POINT *pts, int count, EDGE **edges, int *ymin, int *ymax)
@@ -251,7 +317,7 @@ static int build_edges(const POINT *pts, int count, EDGE **edges, int *ymin, int
     a = pts[i];
     b = pts[(i + 1) % count];
     if (a.y == b.y)
-      continue;
+      continue; // las horizontales no aportan cruces
     if (a.y < b.y)
     {
       t = a;
@@ -271,22 +337,22 @@ static int build_edges(const POINT *pts, int count, EDGE **edges, int *ymin, int
   return n;
 }
 
-void scanline_fill_color(const POLYGON *p)
+// Scanline con tabla de aristas activas, de arriba hacia abajo.
+// use_texture: cada pixel toma su texel (mapeo simple: coordenada de pantalla modulo
+// el tamano de la textura); si no, se usa el color de la provincia.
+static void scanline_fill(const POLYGON *p, int use_texture)
 {
   POINT *pts;
   EDGE *edges;
   double *xs;
-  int nedges, ymin, ymax, scanline;
-  int i, k, n, x, x0, x1;
+  int count, nedges, ymin, ymax, scanline;
+  int i, k, n, x, x0, x1, v = 0;
 
-  if (p->count < 3)
-    return;
-
-  pts = polygon_to_screen(p);
+  pts = polygon_to_clipped_screen(p, &count);
   if (pts == NULL)
     return;
 
-  nedges = build_edges(pts, p->count, &edges, &ymin, &ymax);
+  nedges = build_edges(pts, count, &edges, &ymin, &ymax);
   free(pts);
   if (nedges < 0)
     return;
@@ -298,16 +364,17 @@ void scanline_fill_color(const POLYGON *p)
     return;
   }
 
-  color_province(&current_color, p->province);
+  if (!use_texture)
+    color_province(&current_color, p->province);
 
   if (ymin < 0)
     ymin = 0;
   if (ymax > VRES - 1)
     ymax = VRES - 1;
 
-  scanline = ymax;
-  while (scanline >= ymin)
+  for (scanline = ymax; scanline >= ymin; scanline--)
   {
+    // activar las aristas que empiezan a cruzar esta linea
     for (i = 0; i < nedges; i++)
       if (!edges[i].active && edges[i].ylow < scanline && scanline <= edges[i].yhigh)
       {
@@ -321,6 +388,9 @@ void scanline_fill_color(const POLYGON *p)
         xs[n++] = edges[i].x;
     qsort(xs, n, sizeof(double), cmp_double);
 
+    if (use_texture)
+      v = scanline % texture_h;
+
     for (k = 0; k + 1 < n; k += 2)
     {
       x0 = (int)lround(xs[k]);
@@ -330,110 +400,40 @@ void scanline_fill_color(const POLYGON *p)
       if (x1 > HRES - 1)
         x1 = HRES - 1;
       for (x = x0; x <= x1; x++)
+      {
+        if (use_texture)
+          current_color = texture[x % texture_w][v];
         plot(x, scanline);
+      }
     }
 
+    // pasar a la siguiente linea: avanzar x y retirar las que terminaron
     for (i = 0; i < nedges; i++)
       if (edges[i].active)
+      {
         edges[i].x -= edges[i].dxdy;
-
-    for (i = 0; i < nedges; i++)
-      if (edges[i].active && edges[i].ylow >= scanline - 1)
-        edges[i].active = 0;
-
-    scanline--;
+        if (edges[i].ylow >= scanline - 1)
+          edges[i].active = 0;
+      }
   }
 
   free(xs);
   free(edges);
 }
 
+void scanline_fill_color(const POLYGON *p)
+{
+  scanline_fill(p, 0);
+}
+
 void scanline_fill_texture(const POLYGON *p)
 {
-  POINT *pts;
-  EDGE *edges;
-  double *xs;
-  int nedges, ymin, ymax, scanline;
-  int i, k, n, x, x0, x1, u, v;
-
-  // cada provincia usa su propia textura
+  // cada provincia usa su propia textura; si falta el archivo se pinta de color
   data_select_texture(p->province);
   if (texture == NULL || texture_w <= 0 || texture_h <= 0)
-  {
-    scanline_fill_color(p);
-    return;
-  }
-
-  if (p->count < 3)
-    return;
-
-  pts = polygon_to_screen(p);
-  if (pts == NULL)
-    return;
-
-  nedges = build_edges(pts, p->count, &edges, &ymin, &ymax);
-  free(pts);
-  if (nedges < 0)
-    return;
-
-  xs = (double *)malloc((nedges > 0 ? nedges : 1) * sizeof(double));
-  if (xs == NULL)
-  {
-    free(edges);
-    return;
-  }
-
-  if (ymin < 0)
-    ymin = 0;
-  if (ymax > VRES - 1)
-    ymax = VRES - 1;
-
-  scanline = ymax;
-  while (scanline >= ymin)
-  {
-    for (i = 0; i < nedges; i++)
-      if (!edges[i].active && edges[i].ylow < scanline && scanline <= edges[i].yhigh)
-      {
-        edges[i].active = 1;
-        edges[i].x = edges[i].xhigh + (scanline - edges[i].yhigh) * edges[i].dxdy;
-      }
-
-    n = 0;
-    for (i = 0; i < nedges; i++)
-      if (edges[i].active)
-        xs[n++] = edges[i].x;
-    qsort(xs, n, sizeof(double), cmp_double);
-
-    v = scanline % texture_h;
-    for (k = 0; k + 1 < n; k += 2)
-    {
-      x0 = (int)lround(xs[k]);
-      x1 = (int)lround(xs[k + 1]);
-      if (x0 < 0)
-        x0 = 0;
-      if (x1 > HRES - 1)
-        x1 = HRES - 1;
-      for (x = x0; x <= x1; x++)
-      {
-        u = x % texture_w;
-        current_color = texture[u][v];
-        plot(x, scanline);
-      }
-    }
-
-    for (i = 0; i < nedges; i++)
-      if (edges[i].active)
-        edges[i].x -= edges[i].dxdy;
-
-    for (i = 0; i < nedges; i++)
-      if (edges[i].active && edges[i].ylow >= scanline - 1)
-        edges[i].active = 0;
-
-    scanline--;
-  }
-
-  free(xs);
-  free(edges);
+    scanline_fill(p, 0);
+  else
+    scanline_fill(p, 1);
 }
 
 void PaintPolygon(const POLYGON *p)

@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/32723712/README.md)
 # CG-PR01# Proyecto 1: Manejo de Polígonos en 2D — Mapa de Costa Rica
 
 **Curso:** Computer Graphics — Escuela de Computación, ITCR

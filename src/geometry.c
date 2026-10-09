@@ -1,4 +1,8 @@
 #include "geometry.h"
+#include <string.h>
+
+#define SCALE_MIN 0.1
+#define SCALE_MAX 500.0
 
 CAMERA camera = {0.0, 0.0, 1.0, 0.0};
 
@@ -58,7 +62,19 @@ void geometry_reset(void)
 
 void geometry_zoom(double factor)
 {
+  double old_scale = camera.scale;
+  double ratio;
+
   camera.scale *= factor;
+  if (camera.scale < SCALE_MIN)
+    camera.scale = SCALE_MIN;
+  if (camera.scale > SCALE_MAX)
+    camera.scale = SCALE_MAX;
+
+  //El error estaba aqui, se calculaba mal el ratio
+  ratio = camera.scale / old_scale;
+  camera.tx *= ratio;
+  camera.ty *= ratio;
 }
 
 void geometry_pan(double dx, double dy)
@@ -74,12 +90,11 @@ void geometry_rotate(double rad)
 
 MAT3 geometry_matrix(void)
 {
-  double cx = HRES / 2.0;
+  double cx = HRES / 2.0;   
   double cy = VRES / 2.0;
   MAT3 m = mat3_translate(-cx, -cy);
-
-  m = mat3_multiply(mat3_scale(camera.scale, camera.scale), m);
   m = mat3_multiply(mat3_rotate(camera.angle), m);
+  m = mat3_multiply(mat3_scale(camera.scale, camera.scale), m);
   m = mat3_multiply(mat3_translate(cx + camera.tx, cy + camera.ty), m);
   return m;
 }
@@ -189,4 +204,112 @@ int geometry_clip_line(POINT *a, POINT *b)
   b->x = (int)lround(x1);
   b->y = (int)lround(y1);
   return 1;
+}
+
+typedef enum
+{
+  CLIP_LEFT,
+  CLIP_RIGHT,
+  CLIP_BOTTOM,
+  CLIP_TOP
+} CLIP_EDGE;
+
+static int is_inside(VEC2 p, CLIP_EDGE edge)
+{
+  switch (edge)
+  {
+  case CLIP_LEFT:
+    return p.x >= 0.0;
+  case CLIP_RIGHT:
+    return p.x <= HRES - 1.0;
+  case CLIP_BOTTOM:
+    return p.y >= 0.0;
+  default:
+    return p.y <= VRES - 1.0;
+  }
+}
+
+static VEC2 intersect(VEC2 s, VEC2 e, CLIP_EDGE edge)
+{
+  VEC2 r;
+  double t;
+
+  if (edge == CLIP_LEFT || edge == CLIP_RIGHT)
+  {
+    r.x = edge == CLIP_LEFT ? 0.0 : HRES - 1.0;
+    t = (r.x - s.x) / (e.x - s.x);
+    r.y = s.y + t * (e.y - s.y);
+  }
+  else
+  {
+    r.y = edge == CLIP_BOTTOM ? 0.0 : VRES - 1.0;
+    t = (r.y - s.y) / (e.y - s.y);
+    r.x = s.x + t * (e.x - s.x);
+  }
+  return r;
+}
+
+static VEC2 *clip_pass(const VEC2 *in, int n, int *out_n, CLIP_EDGE edge)
+{
+  VEC2 *out, s, e;
+  int i, m = 0, s_in, e_in;
+
+  *out_n = 0;
+  if (n == 0)
+    return NULL;
+
+  out = (VEC2 *)malloc((2 * n + 2) * sizeof(VEC2));
+  if (out == NULL)
+    return NULL;
+
+  s = in[n - 1];
+  s_in = is_inside(s, edge);
+  for (i = 0; i < n; i++)
+  {
+    e = in[i];
+    e_in = is_inside(e, edge);
+    if (e_in)
+    {
+      if (!s_in)
+        out[m++] = intersect(s, e, edge);
+      out[m++] = e;
+    }
+    else if (s_in)
+      out[m++] = intersect(s, e, edge);
+    s = e;
+    s_in = e_in;
+  }
+
+  *out_n = m;
+  return out;
+}
+
+int geometry_clip_polygon(const VEC2 *in, int n, VEC2 **out)
+{
+  VEC2 *cur, *next;
+  int edge, m = n;
+
+  *out = NULL;
+  if (n <= 0)
+    return 0;
+
+  cur = (VEC2 *)malloc(n * sizeof(VEC2));
+  if (cur == NULL)
+    return 0;
+  memcpy(cur, in, n * sizeof(VEC2));
+
+  for (edge = CLIP_LEFT; edge <= CLIP_TOP; edge++)
+  {
+    next = clip_pass(cur, m, &m, (CLIP_EDGE)edge);
+    free(cur);
+    cur = next;
+    if (cur == NULL || m == 0)
+    {
+      free(cur);
+      return 0;
+    }
+  }
+
+  *out = cur;
+  return m;
 }
