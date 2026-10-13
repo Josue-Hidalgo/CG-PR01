@@ -275,6 +275,9 @@ static void special(int key, int x, int y)
   case GLUT_KEY_UP:
     do_action(ACT_PAN_DOWN, speed);
     break;
+  case GLUT_KEY_UP:
+    do_action(ACT_PAN_UP, speed);
+    break;
   default:
     break;
   }
