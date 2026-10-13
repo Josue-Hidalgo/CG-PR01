@@ -264,12 +264,15 @@ static void special(int key, int x, int y)
   switch (key)
   {
   case GLUT_KEY_RIGHT:
-    do_action(ACT_PAN_RIGHT, speed);
-    break;
-  case GLUT_KEY_LEFT:
     do_action(ACT_PAN_LEFT, speed);
     break;
+  case GLUT_KEY_LEFT:
+    do_action(ACT_PAN_RIGHT, speed);
+    break;
   case GLUT_KEY_DOWN:
+    do_action(ACT_PAN_UP, speed);
+    break;
+  case GLUT_KEY_UP:
     do_action(ACT_PAN_DOWN, speed);
     break;
   case GLUT_KEY_UP:
